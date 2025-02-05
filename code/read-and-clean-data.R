@@ -21,30 +21,14 @@ data$til_dnr_dni_order_baseline <- NULL # everything is NA
 # 0   1 
 # 426  73
 
-# note: I forget what the "til_", "D1score", and "D7score" prefixes mean and what INR means
+# note: I forget what the "til_", "D1score", and "D7score" prefixes mean
 
 # table(data$til_dnr_dni_order_d7)
 # No Yes 
 # 20 457  22 
 
-# table(data$D1score_inr)
-# 0   1 
-# 490   9 
-# 
-# table(data$D7score_inr)
-# 0   1 
-# 488  11 
-# 
-# table(data$Baseline_INR)
-# 0   1   2 
-# 466  24   9 
-# 
-# table(data$D7_INR)
-# 0   1   2 
-# 462  13  11 
-# 
 # table(data$D7_DNR)
-# 0   1   2   3 
+# 0   1   2   3 # what do 2 and 3 mean?
 # 489   4   2   4 
 
 # Save cleaned dataset (to do) ----
