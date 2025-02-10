@@ -9,13 +9,15 @@ data$modified_itt <- NULL # everything is 1
 data$var30 <- NULL # everything is NA
 data$var31 <- NULL # everything is NA
 data$var32 <- NULL # everything is NA
-data$til_dnr_dni_order_baseline <- NULL # everything is NA
+data$til_dnr_dni_order_baseline <- NULL # everything is NA because inclusion criteria
+data$mis <- NULL # redundant with "treatment_group" column; "mis" = "MISTIE" treatment = "surgical" in treatment_group
+data$glasgow_rankin_0_3_30 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_30
+data$glasgow_rankin_0_3_180 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_180
+data$glasgow_rankin_0_3_365 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_365
 
 # to do: more cleaning
 
 # Explore data (maybe put in another R script) ----
-
-# Note: "mis" column is the MISTIE treatment (250 treated, 249 control=standard of care)
 
 # table(data$ischemic_stroke)
 # 0   1 
