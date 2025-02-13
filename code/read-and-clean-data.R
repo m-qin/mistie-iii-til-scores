@@ -2,35 +2,38 @@
 # Read in .dta file ----
 data <- haven::read_dta(here::here("data/private/M3_data_499_TIL.dta"))
 
-# Clean data ----
-data$studyname <- NULL # everything is "MISTIE III"
-data$modified_itt <- NULL # everything is 1
-# hmm maybe these are issues with reading in the data
-data$var30 <- NULL # everything is NA
-data$var31 <- NULL # everything is NA
-data$var32 <- NULL # everything is NA
-data$til_dnr_dni_order_baseline <- NULL # everything is NA because inclusion criteria
-data$mis <- NULL # redundant with "treatment_group" column; "mis" = "MISTIE" treatment = "surgical" in treatment_group
-data$glasgow_rankin_0_3_30 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_30
-data$glasgow_rankin_0_3_180 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_180
-data$glasgow_rankin_0_3_365 <- NULL # binarized (incorrectly?) from data$glasgow_rankin_365
+# Extract variables of interest ----
+stratifying_vars <- c("age_at_consent",
+                      "gcs_randomization", # check
+                      "nihss_randomization", # check
+                      "diagct_ich_volume", # check
+                      "diagct_ivh_volume",# check
+                      "stabct_ich_volume", # check
+                      "stabct_ivh_volume", # check
+                      "eot_less_15")
+predictor_vars <- c("BaselineNEWscore_BP", # check
+                    "Day7NEWscore_BP",     # check
+                    "Baseline_BP_control", # check
+                    "D7_BP_control", # check
+                    "Baseline_Hypotension",
+                    "D7_Hypotension",
+                    "Baseline_Hyperpyrexia",
+                    "Baseline_Hyperglycemia",
+                    "Baseline_ICP",
+                    "Baseline_herniation",
+                    "Baseline_INR",
+                    "D7_Hyperpyrexia",
+                    "D7_Hyperglycemia",
+                    "D7_ICP",
+                    "D7_herniation",
+                    "D7_INR", 
+                    "D7_DNR")
+outcome_var <- "glasgow_rankin_0_3_30" # 1 if "glasgow_rankin_30" is 0-3, 0 if "glasgow_rankin_30" is 4-6; 10 NAs
 
-# to do: more cleaning
+data_subset <- subset(data, select = c(stratifying_vars, predictor_vars, outcome_var))
 
-# Explore data (maybe put in another R script) ----
-
-# table(data$ischemic_stroke)
-# 0   1 
-# 426  73
-
-# note: I forget what the "til_", "D1score", and "D7score" prefixes mean
-
-# table(data$til_dnr_dni_order_d7)
-# No Yes 
-# 20 457  22 
-
-# table(data$D7_DNR)
-# 0   1   2   3 # what do 2 and 3 mean?
-# 489   4   2   4 
-
-# Save cleaned dataset (to do) ----
+## Explore data ----
+plot(data_subset$gcs_randomization, data_subset$nihss_randomization)
+table(data_subset$Baseline_BP_control, data_subset$BaselineNEWscore_BP) # ??
+table(data_subset$D7_BP_control, data_subset$Day7NEWscore_BP) # ??
+summary(data_subset)
