@@ -33,7 +33,10 @@ outcome_var <- "glasgow_rankin_0_3_30" # 1 if "glasgow_rankin_30" is 0-3, 0 if "
 data_subset <- subset(data, select = c(stratifying_vars, predictor_vars, outcome_var))
 
 ## Explore data ----
+table(data_subset$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), only 57 are 1 (good patient outcome)!
 plot(data_subset$gcs_randomization, data_subset$nihss_randomization)
 table(data_subset$Baseline_BP_control, data_subset$BaselineNEWscore_BP) # ??
 table(data_subset$D7_BP_control, data_subset$Day7NEWscore_BP) # ??
 summary(data_subset)
+cor_matrix <- cor(data_subset, use = "pairwise.complete.obs")
+View(cor_matrix)
