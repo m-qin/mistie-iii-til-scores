@@ -6,10 +6,8 @@ data <- haven::read_dta(here::here("data/private/M3_data_499_TIL.dta"))
 stratifying_vars <- c("age_at_consent",
                       "gcs_randomization", # check
                       "nihss_randomization", # check
-                      "diagct_ich_volume", # check
-                      "diagct_ivh_volume",# check
-                      "stabct_ich_volume", # check
-                      "stabct_ivh_volume", # check
+                      "stabct_ich_volume",
+                      "stabct_ivh_volume",
                       "eot_less_15")
 predictor_vars <- c("BaselineNEWscore_BP", # check
                     "Day7NEWscore_BP",     # check
@@ -37,6 +35,7 @@ table(data_subset$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), onl
 plot(data_subset$gcs_randomization, data_subset$nihss_randomization)
 table(data_subset$Baseline_BP_control, data_subset$BaselineNEWscore_BP) # ??
 table(data_subset$D7_BP_control, data_subset$Day7NEWscore_BP) # ??
+
 summary(data_subset)
 cor_matrix <- cor(data_subset, use = "pairwise.complete.obs")
 View(cor_matrix)
