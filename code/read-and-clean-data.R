@@ -3,9 +3,9 @@
 data <- haven::read_dta(here::here("data/private/M3_data_499_TIL.dta"))
 
 # Extract variables of interest ----
-stratifying_vars <- c("age_at_consent", # integers (but treat as continuous), ranging from 28 to 90 (median 62, mean 61)
-                      "gcs_randomization", # integers (but treat as continuous), ranging from 3 to 15 (median 10, mean 10.6)
-                      "nihss_randomization", # integers (but treat as continuous), ranging from 1 to 40 (median 19, mean 19)
+stratifying_vars <- c("age_at_consent", # integers (but treat as continuous), ranging from 28 to 90 (median 62, mean 61), unimodal, very slightly skew left
+                      "gcs_randomization", # integers (but treat as continuous), ranging from 3 to 15 (median 10, mean 10.6), bimodal (around 8 and 13)
+                      "nihss_randomization", # integers (but treat as continuous), ranging from 1 to 40 (median 19, mean 19), roughly normal
                       "stabct_ich_volume", # continuous, ranging from 20.9 to 127.1
                       "stabct_ivh_volume", # continuous, ranging from 0 to 61.8
                       "eot_less_15") # binary, 346 values of 0, 148 values of 1; 5 NAs
@@ -46,6 +46,24 @@ table(data_subset$D7_BP_control, data_subset$Day7NEWscore_BP) # ??
 table(data_subset$Baseline_Hypotension, data_subset$D7_Hypotension)
 table(data_subset$Baseline_Hyperpyrexia, data_subset$D7_Hyperpyrexia)
 
+# verify that variables with 13 NAs are missing the same observations (yes)
+# missing_indices <- list()
+# for (var in colnames(data_subset)){
+#   if (sum(is.na(data_subset[[var]])) == 13){
+#     missing_indices[[var]] <- which(is.na(data_subset[[var]]))
+#   }
+# }
+
 summary(data_subset)
 cor_matrix <- cor(data_subset, use = "pairwise.complete.obs")
 View(cor_matrix)
+
+## Exclude observations with missing outcome ----
+data_analysis <- subset(data_subset, subset = !is.na(data_subset$glasgow_rankin_0_3_30))
+
+# check number of missing values in each predictor (mostly 0, Baseline_ICP and Baseline_herniation have 1, eot_less_15, 8 have the same 12 missing)
+missing_indices <- list()
+for (var in colnames(data_subset)){
+  missing_indices[[var]] <- sum(is.na(data_analysis[[var]]))
+}
+View(missing_indices)
