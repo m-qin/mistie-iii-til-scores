@@ -7,17 +7,28 @@ if (!("data.table" %in% installed.packages())){
 data_analysis <- data.table::fread(here::here("data/private/data_for_analysis.csv"))
 
 ## Explore data ----
-summary(data_analysis)
-
-table(data_analysis$site_continent, useNA = "always")
+# check continent and outcome tables
+table(data_analysis$site_continent, useNA = "always") # 395 N America, 84 Europe, 14 Australia-Asia
 table(data_analysis$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), only 57 are 1 (good patient outcome)
+
+# # check all variables' missingness, mean, median, range
+# summary(data_analysis)
+
+# check GCS vs NIHSS correspondence (seems somewhat correlated but still distinct)
 plot(data_analysis$gcs_randomization, data_analysis$nihss_randomization)
 cor(data_analysis$gcs_randomization, data_analysis$nihss_randomization) # -0.62
 
+# visualize the continuous random variable distributions
 hist(data_analysis$age_at_consent) # unimodal, very slightly skew left
 hist(data_analysis$gcs_randomization, main = "Histogram of GCS at randomization", xlab = "GCS at randomization") # bimodal (around 8 and 13)
 hist(data_analysis$nihss_randomization) # roughly normal
 
+# check distribution of the only binary predictor
+# table(data_analysis$eot_less_15, useNA = "always")
+mean(data_analysis$eot_less_15, na.rm = TRUE)
+sd(data_analysis$eot_less_15, na.rm = TRUE)
+
+# explore the 4 blood pressure variables
 table(data_analysis$Baseline_BP_control, data_analysis$BaselineNEWscore_BP) # ??
 table(data_analysis$D7_BP_control, data_analysis$Day7NEWscore_BP) # ??
 table(data_analysis$Baseline_Hypotension, data_analysis$D7_Hypotension)
@@ -46,3 +57,4 @@ View(cor_matrix)
 # View(missing_indices)
 
 missing_d7 <- data_analysis[which(is.na(data_analysis$Day7NEWscore_BP)), ]
+missing_d7$sitename # looks random, not systematic --> okay to impute during modeling
