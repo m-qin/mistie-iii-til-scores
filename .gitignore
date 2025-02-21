@@ -3,3 +3,4 @@ data/*
 .Rproj.user
 .Rhistory
 code/read-and-clean-data-old.R
+figures/GCS_at_randomization.png
