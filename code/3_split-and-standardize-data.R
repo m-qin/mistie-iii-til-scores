@@ -18,7 +18,7 @@ negative_train_valid <- sample(negative_indices, size = 354, replace = F)
 positive_test <- positive_indices[!positive_indices %in% positive_train_valid]
 negative_test <- negative_indices[!negative_indices %in% negative_train_valid]
 
-# randomize the order of patients, so that 10 folds can be taken by every 40 patients in the train and validation dataset
+# randomize the order of patients (hopefully doesn't matter for any models though)
 train_valid_indices <- sample(c(positive_train_valid, negative_train_valid), size = 400, replace = F)
 test_indices <- sample(c(positive_test, negative_test), size = 93, replace = F)
 train_valid <- data_analysis[train_valid_indices, ]
