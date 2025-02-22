@@ -41,3 +41,64 @@ factor_predictors <- function(data){
   }
   return(data)
 }
+
+# Function to remove variable(s)
+rm_vars <- function(data, vars_to_rm = "new_id"){
+  for (var in vars_to_rm){
+    data[[var]] <- NULL
+  }
+  return(data)
+}
+
+# Function to impute missing predictor values
+# TO DO
+
+# Function to get 1/10 of the training and validation data (one fold)
+get_excluded_fold <- function(i){
+  excluded_indices <- 1:40 + i*40
+  return(train_valid[excluded_indices, ])
+}
+
+# Function to get 9/10 of the training and validation data (one fold)
+get_included_folds <- function(i){
+  excluded_indices <- 1:40 + i*40
+  included_indices <- (1:400)[!excluded_indices]
+  return(train_valid[included_indices, ])
+}
+
+# Function to get a model's predictions on one fold
+# To Do: this may not be the syntax for all models; newdata vs newx
+preds_on_excluded_fold <- function(i, model){
+  return(predict(model(i),
+                 get_excluded_fold(i, train_valid)))
+}
+
+# Function to get a model's PPV on one fold
+ppv_on_excluded_fold <- function(i, model){
+  pred_vals <- preds_on_excluded_fold(i, model)
+  true_vals <- train_valid$glasgow_rankin_0_3_30[get_excluded_fold(i)]
+  return(get_ppv(pred_vals, true_vals))
+}
+
+# Function to calculate PPV from predictions and true values
+get_ppv <- function(pred_vals, true_vals){
+  n_true_pos <- sum(pred_vals * true_vals)
+  n_false_pos <- sum(pred_vals * (1-true_vals))
+  ppv <- n_true_pos / (n_true_pos + n_false_pos)
+  return(ppv)
+}
+
+# Function to cross-validate a model
+get_xvalid_PPVs <- function(model){
+  return(sapply(1:10, ppv_on_excluded_fold, model))
+}
+
+
+## Model functions ----
+# Function to perform logistic regression on one fold
+# TO DO: deal with sitename as random effect
+logistic_reg_on_included_folds <- function(i){
+  return(glm(glasgow_rankin_0_3_30 ~ .,
+             family = "binomial",
+             data = get_included_folds(i, train_valid)))
+}

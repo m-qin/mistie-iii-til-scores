@@ -3,11 +3,9 @@ if (!("data.table" %in% installed.packages())){
   install.packages("data.table")
 }
 
-library(data.table)
-
 ## Clear environment and Read in .csv ----
-rm(ls())
-data_analysis <- fread(here::here("data/private/data_for_analysis.csv"))
+rm(list = ls())
+data_analysis <- data.table::fread(here::here("data/private/data_for_analysis.csv"))
 
 ## Set seed and split data ----
 set.seed(643)
@@ -41,5 +39,5 @@ for (var in quant_vars){
 }
 
 ## Save datasets ----
-fwrite(train_valid, here::here("data/private/train_and_valid_std_data.csv"))
-fwrite(test, here::here("data/private/test_std_data.csv"))
+data.table::fwrite(train_valid, here::here("data/private/train_and_valid_std_data.csv"))
+data.table::fwrite(test, here::here("data/private/test_std_data.csv"))
