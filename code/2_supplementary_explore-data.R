@@ -3,7 +3,8 @@ if (!("data.table" %in% installed.packages())){
   install.packages("data.table")
 }
 
-## Read in .csv ----
+## Clear environment and Read in .csv ----
+rm(list = ls())
 data_analysis <- data.table::fread(here::here("data/private/data_for_analysis.csv"))
 
 ## Explore data ----

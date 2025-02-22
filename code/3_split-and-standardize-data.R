@@ -5,7 +5,8 @@ if (!("data.table" %in% installed.packages())){
 
 library(data.table)
 
-## Read in .csv ----
+## Clear environment and Read in .csv ----
+rm(ls())
 data_analysis <- fread(here::here("data/private/data_for_analysis.csv"))
 
 ## Set seed and split data ----

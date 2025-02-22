@@ -7,11 +7,12 @@ if (!("data.table" %in% installed.packages())){
   install.packages("data.table")
 }
 
-## Read in .dta files ----
+## Clear environment and Read in .dta files ----
+rm(list = ls())
 patients <- haven::read_dta(here::here("data/private/M3_data_499_TIL.dta"))
 sites <- haven::read_dta(here::here("data/private/M3_TIL_added_data.dta"))
 
-## Merge and Extract variables of interest ----
+## Extract variables of interest and Merge ----
 cluster_vars <- c("sitename",
                   "site_continent")
 
@@ -45,10 +46,12 @@ predictor_vars <- c("BaselineNEWscore_BP", # ordinal categorical variable (value
 
 sites_subset <- subset(sites, select = c("new_id", cluster_vars))
 patients_subset <- subset(patients, select = c("patientnum_ninds", stratifying_vars, predictor_vars, outcome_var))
-data_merged <- merge(sites_subset, patients_subset, by.x = "new_id", by.y = "patientnum_ninds")
+data_merged <- merge(sites_subset, patients_subset, by.x = "new_id", by.y = "patientnum_ninds") # "new_id" is kept as a column
 
-## Exclude observations with missing outcome and Save dataset ----
+## Exclude observations with missing outcome ----
 data_analysis <- subset(data_merged, subset = !is.na(data_merged$glasgow_rankin_0_3_30)) # exclude 6 observations with missing outcome
+
+## Save dataset ----
 data.table::fwrite(data_analysis, here::here("data/private/data_for_analysis.csv"))
 
 
