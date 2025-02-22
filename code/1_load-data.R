@@ -24,6 +24,7 @@ stratifying_vars <- c("age_at_consent", # integers (but treat as continuous), ra
                       "stabct_ivh_volume", # continuous, ranging from 0 to 61.8
                       "eot_less_15") # binary, 346 values of 0, 148 values of 1; 5 NAs
 
+# Note: These are all categorical; we will treat them as unordered factors in our models, even though they are generally ordered in increasing severity.
 predictor_vars <- c("BaselineNEWscore_BP", # ordinal categorical variable (values of 0, 1, 2, 3, 4, 5)
                     "Day7NEWscore_BP",     # ordinal categorical variable (values of 0, 1, 2, 3, 4, 5); 13 NAs
                     "Baseline_BP_control", # to do: treat as factor (4 levels)

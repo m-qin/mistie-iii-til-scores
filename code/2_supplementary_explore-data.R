@@ -34,6 +34,9 @@ table(data_analysis$D7_BP_control, data_analysis$Day7NEWscore_BP) # ??
 table(data_analysis$Baseline_Hypotension, data_analysis$D7_Hypotension)
 table(data_analysis$Baseline_Hyperpyrexia, data_analysis$D7_Hyperpyrexia)
 
+# check DNR within 7 days
+table(data_analysis$D7_DNR, useNA = "always") # 483 values of 0
+
 ## Check correlations ----
 # note: the code below only makes sense for continuous predictors; need to handle categorical variables (factor them in R)
 cor_matrix <- cor(subset(data_analysis, select = predictor_vars),
