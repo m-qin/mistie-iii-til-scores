@@ -24,13 +24,14 @@ test_indices <- sample(c(positive_test, negative_test), size = 93, replace = F)
 train_valid <- data_analysis[train_valid_indices, ]
 test <- data_analysis[test_indices, ]
 
-## Standardize quantitative variables according to training data ----
+## Standardize quantitative variables in train AND test datasets according to training data ----
 quant_vars <- c("age_at_consent", # integers (but treat as continuous), ranging from 28 to 90 (median 62, mean 61), unimodal, very slightly skew left
                 "gcs_randomization", # integers (but treat as continuous), ranging from 3 to 15 (median 10, mean 10.6), bimodal (around 8 and 13); high score is good
                 "nihss_randomization", # integers (but treat as continuous), ranging from 1 to 40 (median 19, mean 19), roughly normal
                 "stabct_ich_volume", # continuous, ranging from 20.9 to 127.1
                 "stabct_ivh_volume") # continuous, ranging from 0 to 61.8
 
+# to do: in the future, would be nice to have the means and SDs of these variables saved in a csv and standardization be a helper function
 for (var in quant_vars){
   var_mean <- mean(train_valid[[var]])
   var_sd <- sd(train_valid[[var]])

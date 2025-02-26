@@ -35,15 +35,15 @@ predictor_vars <- c("BaselineNEWscore_BP", # ordinal categorical variable (value
 ## Functions ----
 
 # Function to factor all categorical variables as unordered
-factor_predictors <- function(data){
+factor_cat_predictors <- function(data){
   for (var in predictor_vars){
     data[[var]] <- factor(data[[var]], ordered = FALSE)
   }
   return(data)
 }
 
-# Function to remove variable(s)
-rm_vars <- function(data, vars_to_rm = "new_id"){
+# Function to remove ID variable(s) from dataset
+rm_id_var <- function(data, vars_to_rm = "new_id"){
   for (var in vars_to_rm){
     data[[var]] <- NULL
   }
