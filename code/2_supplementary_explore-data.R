@@ -8,9 +8,25 @@ rm(list = ls())
 data_analysis <- data.table::fread(here::here("data/private/data_for_analysis.csv"))
 
 ## Explore data ----
-# check continent and outcome tables
-table(data_analysis$site_continent, useNA = "always") # 395 N America, 84 Europe, 14 Australia-Asia
-table(data_analysis$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), only 57 are 1 (good patient outcome)
+# check outcome prevalence
+table(data_analysis$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), only 57 are 1 (good patient outcome); 6 NAs have been excluded already
+
+# check distribution of site ID and continent
+table(data_analysis$site_continent, useNA = "always") # 395 N America, 84 Europe, 14 Australia-Asia; 0 NAs
+hist(table(data_analysis$sitename)) # 0 NAs
+summary(as.numeric(table(data_analysis$sitename))) # sites have 1-24 patients, median 5, mean 6.3
+
+# check outcome prevalence by site
+table(data_analysis$sitename, data_analysis$glasgow_rankin_0_3_30)
+hist(table(data_analysis$sitename, data_analysis$glasgow_rankin_0_3_30)[, 2],
+     main = "Number of good 30-day mRS by site",
+     xlab = "Number of good 30-day mRS by site")
+prop.table(table(data_analysis$sitename, data_analysis$glasgow_rankin_0_3_30),
+           margin = 1)
+hist(prop.table(table(data_analysis$sitename, data_analysis$glasgow_rankin_0_3_30),
+                margin = 1)[, 2],
+     main = "Prevalence of good 30-day mRS by site",
+     xlab = "Prevalence of good 30-day mRS by site")
 
 # # check all variables' missingness, mean, median, range
 # summary(data_analysis)
