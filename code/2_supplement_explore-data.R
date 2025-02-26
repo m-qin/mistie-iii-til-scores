@@ -13,8 +13,10 @@ table(data_analysis$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), o
 
 # check distribution of site ID and continent
 table(data_analysis$site_continent, useNA = "always") # 395 N America, 84 Europe, 14 Australia-Asia; 0 NAs
-hist(table(data_analysis$sitename)) # 0 NAs
-summary(as.numeric(table(data_analysis$sitename))) # sites have 1-24 patients, median 5, mean 6.3
+hist(table(data_analysis$sitename),
+     main = "Number of patients per site (78 sites total)",
+     xlab = "Number of patients per site") # 0 NAs
+summary(as.numeric(table(data_analysis$sitename))) # sites have 1-24 patients, median 5, mean 6.3; 78 sites total
 
 # check outcome prevalence by site
 table(data_analysis$sitename, data_analysis$glasgow_rankin_0_3_30)
