@@ -13,6 +13,10 @@ train_valid <- data.table::fread(here::here("data/private/train_and_valid_std_da
   rm_id_var()
 # to do: impute missing predictor values
 
+## Fit models ----
 
+# logistic_model <- glm()
+
+# logistic_model_with_site_rand_eff
 
 

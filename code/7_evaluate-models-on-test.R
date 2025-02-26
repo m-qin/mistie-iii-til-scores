@@ -8,7 +8,7 @@ rm(list = ls())
 
 source(here::here("code/helper-functions.R"))
 
-train_valid <- data.table::fread(here::here("data/private/test_std_data.csv")) |>
+test <- data.table::fread(here::here("data/private/test_std_data.csv")) |>
   factor_cat_predictors() |>
   rm_id_var()
 # to do: impute missing predictor values
