@@ -24,6 +24,9 @@ test_indices <- sample(c(positive_test, negative_test), size = 93, replace = F)
 train_valid <- data_analysis[train_valid_indices, ]
 test <- data_analysis[test_indices, ]
 
+# prop.table(table(train_valid$site_continent)) # Australia-Asia, Europe, N Am - 2.8%, 17.0%, 80.3%
+# prop.table(table(test$site_continent)) # Australia-Asia, Europe, N Am - 3.2%, 17.2%, 80.0%
+
 ## Save UNSTANDARDIZED train/valid and test datasets ----
 data.table::fwrite(train_valid, here::here("data/private/train_and_valid_UNSTD_data.csv"))
 data.table::fwrite(test, here::here("data/private/test_UNSTD_data.csv"))
