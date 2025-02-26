@@ -1,8 +1,8 @@
 # MISTIE III TIL Scores
 
-**Creators:** Michelle Qin, Chuyi Sun, Michael Tang, Jiayi Xue
+**Creators:** Michelle Qin, Chuyi Sun, Jiayi Xue
 
-**Mentors:** Dr. Wendy Ziai, Dr. Gayane Yenokyan, Jiangxia Wang (instructor for Biostat 643: Statistical Consulting)
+**Mentors:** Dr. Wendy Ziai, Dr. Gayane Yenokyan, Jiangxia Wang (instructor for Biostat 643: Statistical Consulting), Michael Tang
 
 **Affiliations:** Johns Hopkins Bloomberg School of Public Health and Johns Hopkins Medicine
 
