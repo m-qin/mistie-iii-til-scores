@@ -1,4 +1,5 @@
 ## Classes of variables ----
+
 id_var <- "new_id"
 
 cluster_vars <- c("sitename",
@@ -12,6 +13,7 @@ stratifying_vars <- c("age_at_consent", # integers (but treat as continuous), ra
                       "stabct_ich_volume", # continuous, ranging from 20.9 to 127.1
                       "stabct_ivh_volume", # continuous, ranging from 0 to 61.8
                       "eot_less_15") # binary, 346 values of 0, 148 values of 1; 5 NAs
+quant_vars <- stratifying_vars
 
 # Note: These are all categorical; we will treat them as unordered factors in our models, even though they are generally ordered in increasing severity.
 predictor_vars <- c("BaselineNEWscore_BP", # ordinal categorical variable (values of 0, 1, 2, 3, 4, 5)
@@ -31,13 +33,27 @@ predictor_vars <- c("BaselineNEWscore_BP", # ordinal categorical variable (value
                     "D7_herniation", # 474 values of 0, 6 values of 1, 6 values of 2; 13 NAs
                     "D7_INR", # 462 values of 0, 13 values of 1, 11 values of 2; 13 NAs
                     "D7_DNR") # 489 values of 0, 4 values of 1, 2 values of 2, 4 values of 3
+cat_vars <- predictor_vars
+
 
 ## Functions ----
 
 # Function to factor all categorical variables as unordered
 factor_cat_predictors <- function(data){
-  for (var in predictor_vars){
+  for (var in cat_vars){
     data[[var]] <- factor(data[[var]], ordered = FALSE)
+  }
+  return(data)
+}
+
+# Function to standardize all quantitative variables according to train/valid dataset
+stdize_quant_vars <- function(data, mean_and_SDs_as_data.table){
+  if (!data.table::is.data.table(mean_and_SDs_as_data.table)){
+    stop("second argument (mean_and_SDs_as_data.table) needs to be a data.table")
+  }
+  for (var in quant_vars){
+    data[[var]] <- (data[[var]] - mean_and_SDs_as_data.table[Variable == var, Mean]) /
+      mean_and_SDs_as_data.table[Variable == var, SD]
   }
   return(data)
 }
