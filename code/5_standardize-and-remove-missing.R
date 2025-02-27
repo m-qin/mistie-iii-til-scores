@@ -14,6 +14,9 @@ quant_vars_mean_and_SD <- data.table::fread(here::here("data/private/quant_vars_
 train_valid <- data.table::fread(here::here("data/private/train_and_valid_UNSTD_data_split_by_site_within_continent.csv"))
 test <- data.table::fread(here::here("data/private/test_UNSTD_data_split_by_site_within_continent.csv"))
 
+## Remove patients with any missing covariate data ----
+train_valid <- train_valid[complete.cases(train_valid)]
+test <- test[complete.cases(test), ]
 
 ## Standardize quantitative variables in train/valid AND test datasets according to TRAIN/VALID data ----
 train_valid_std <- stdize_quant_vars(train_valid, quant_vars_mean_and_SD)
