@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-03-02">
+<meta name="dcterms.date" content="2025-03-04">
 
 <title>Report</title>
 <style>
@@ -3221,7 +3221,7 @@ white-space: normal;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">March 2, 2025</p>
+      <p class="date">March 4, 2025</p>
     </div>
   </div>
   
@@ -3251,8 +3251,8 @@ white-space: normal;
 <details class="code-fold">
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># merge and subset vars</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>patients <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;../data/private/M3_data_499_TIL.dta&quot;</span>))</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;../data/private/M3_TIL_added_data.dta&quot;</span>))</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>patients <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data/private/M3_data_499_TIL.dta&quot;</span>))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data/private/M3_TIL_added_data.dta&quot;</span>))</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Extract variables of interest and Merge ----</span></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>cluster_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;sitename&quot;</span>,</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;site_continent&quot;</span>)</span>
@@ -3315,33 +3315,25 @@ white-space: normal;
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
 <span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co"># View(missing_indices)</span></span>
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>missing_d7 <span class="ot">&lt;-</span> data_analysis[<span class="fu">which</span>(<span class="fu">is.na</span>(data_analysis<span class="sc">$</span>Day7NEWscore_BP)), ]</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>missing_d7<span class="sc">$</span>sitename <span class="co"># looks random, not systematic --&gt; okay to impute during modeling</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] &quot;Scripps&quot;           &quot;U AB&quot;              &quot;U TSA&quot;            
- [4] &quot;Wash U&quot;            &quot;U Buffalo&quot;         &quot;JHU&quot;              
- [7] &quot;U TSA&quot;             &quot;U TSA&quot;             &quot;NSLIJ&quot;            
-[10] &quot;South Glasgow&quot;     &quot;Duke&quot;              &quot;Mutua de Terrassa&quot;</code></pre>
-</div>
-<details class="code-fold">
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check which patients have any missing covariate</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>n_complete <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">complete.cases</span>(data_analysis)) <span class="co"># 477, which means there are 16 patients with at least 1 missing covariate</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>n_missing <span class="ot">&lt;-</span> <span class="fu">nrow</span>(data_analysis) <span class="sc">-</span> n_complete</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># id_of_missing &lt;- vector()</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># n_missing_covariates &lt;- vector()</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># for (i in 1:nrow(data_analysis)){</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   if (sum(is.na(data_analysis[i, ])) &gt; 0){</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co">#     id_of_missing &lt;- append(id_of_missing, data_analysis$new_id[i])</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#     n_missing_covariates &lt;- append(n_missing_covariates, sum(is.na(data_analysis[i, ])))</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co">#     print(i)</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co">#     print(colnames(data_analysis)[which(is.na(data_analysis[i, ]))])</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co">#   }</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># patients_with_missing &lt;- data.frame(new_id = id_of_missing,</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>                                    <span class="co"># n_missing_covariates = n_missing_covariates)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co"># missing_d7 &lt;- data_analysis[which(is.na(data_analysis$Day7NEWscore_BP)), ]</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co"># missing_d7$sitename # looks random, not systematic --&gt; okay to impute during modeling</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># check which patients have any missing covariate</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>n_complete <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">complete.cases</span>(data_analysis)) <span class="co"># 477, which means there are 16 patients with at least 1 missing covariate</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>n_missing <span class="ot">&lt;-</span> <span class="fu">nrow</span>(data_analysis) <span class="sc">-</span> n_complete</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># id_of_missing &lt;- vector()</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># n_missing_covariates &lt;- vector()</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co"># for (i in 1:nrow(data_analysis)){</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co">#   if (sum(is.na(data_analysis[i, ])) &gt; 0){</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     id_of_missing &lt;- append(id_of_missing, data_analysis$new_id[i])</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     n_missing_covariates &lt;- append(n_missing_covariates, sum(is.na(data_analysis[i, ])))</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#     print(i)</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#     print(colnames(data_analysis)[which(is.na(data_analysis[i, ]))])</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co">#   }</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="co"># }</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="co"># patients_with_missing &lt;- data.frame(new_id = id_of_missing,</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>                                    <span class="co"># n_missing_covariates = n_missing_covariates)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>There were 499 patients in the original dataset. First, we will exclude the 6 patients with missing outcome data from our analysis. Then, there are 16 patients with missing covariate data, which is less than 4% of the dataset, so we will proceed with a complete-case analysis. As a result, 477 patients were included in the downstream analysis.</p>
@@ -3354,53 +3346,53 @@ white-space: normal;
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># descriptive analysis</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>complete_df <span class="ot">&lt;-</span> <span class="fu">drop_na</span>(data_analysis)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># convert predictor variables + eot_less_15 to factors </span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>factor_index_start <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">names</span>(complete_df) <span class="sc">==</span> <span class="st">&quot;eot_less_15&quot;</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>complete_df[, factor_index_start<span class="sc">:</span><span class="fu">ncol</span>(complete_df)] <span class="ot">&lt;-</span> <span class="fu">lapply</span>(</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  complete_df[, factor_index_start<span class="sc">:</span><span class="fu">ncol</span>(complete_df)], factor</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;4-6&quot;</span>, <span class="st">&quot;0-3&quot;</span>)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># str(complete_df)</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Define labels for each variable</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>age_at_consent) <span class="ot">&lt;-</span> <span class="st">&quot;Age(years)&quot;</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>gcs_randomization) <span class="ot">&lt;-</span> <span class="st">&quot;Glasgow Coma Scale (GCS) at Baseline&quot;</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>nihss_randomization) <span class="ot">&lt;-</span> <span class="st">&quot;NIH Stroke Scale (NIHSS) at Baseline&quot;</span></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ich_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intracerebral Volumes (mL)&quot;</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ivh_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intraventricular Volumes (mL)&quot;</span></span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>eot_less_15) <span class="ot">&lt;-</span> <span class="st">&quot;End of Surgical Evacuation ICH Volume &lt;15 mL&quot;</span></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>BaselineNEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypertention Levels&quot;</span></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Day7NEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypertention Levels&quot;</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Blood Pressure Control Levels&quot;</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Blood Pressure Control Levels&quot;</span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypotention Levels&quot;</span></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypotention Levels&quot;</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperpyrexia) <span class="ot">&lt;-</span>  <span class="st">&quot;Baseline Body Temperature Levels&quot;</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperpyrexia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Body Temperature Levels&quot;</span></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Glucose Levels&quot;</span></span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Glucose Levels&quot;</span></span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Intracranial Pressure Levels&quot;</span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Intracranial Pressure Levels&quot;</span></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline International Normalized Ratio (INR)&quot;</span> <span class="co">#?</span></span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 International Normalized Ratio (INR)&quot;</span></span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_DNR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Do not Resuscitate&quot;</span></span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span><span class="st">&quot;Day 30 Binarized mRS after Treatment&quot;</span></span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>site_continent) <span class="ot">&lt;-</span> <span class="st">&quot;Continent&quot;</span></span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> site_continent,</span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># descriptive analysis</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>complete_df <span class="ot">&lt;-</span> <span class="fu">drop_na</span>(data_analysis)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># convert predictor variables + eot_less_15 to factors </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>factor_index_start <span class="ot">&lt;-</span> <span class="fu">which</span>(<span class="fu">names</span>(complete_df) <span class="sc">==</span> <span class="st">&quot;eot_less_15&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>complete_df[, factor_index_start<span class="sc">:</span><span class="fu">ncol</span>(complete_df)] <span class="ot">&lt;-</span> <span class="fu">lapply</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  complete_df[, factor_index_start<span class="sc">:</span><span class="fu">ncol</span>(complete_df)], factor</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">levels</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;4-6&quot;</span>, <span class="st">&quot;0-3&quot;</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># str(complete_df)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Define labels for each variable</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>age_at_consent) <span class="ot">&lt;-</span> <span class="st">&quot;Age(years)&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>gcs_randomization) <span class="ot">&lt;-</span> <span class="st">&quot;Glasgow Coma Scale (GCS) at Baseline&quot;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>nihss_randomization) <span class="ot">&lt;-</span> <span class="st">&quot;NIH Stroke Scale (NIHSS) at Baseline&quot;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ich_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intracerebral Volumes (mL)&quot;</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ivh_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intraventricular Volumes (mL)&quot;</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>eot_less_15) <span class="ot">&lt;-</span> <span class="st">&quot;End of Surgical Evacuation ICH Volume &lt;15 mL&quot;</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>BaselineNEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypertention Levels&quot;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Day7NEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypertention Levels&quot;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Blood Pressure Control Levels&quot;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Blood Pressure Control Levels&quot;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypotention Levels&quot;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypotention Levels&quot;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperpyrexia) <span class="ot">&lt;-</span>  <span class="st">&quot;Baseline Body Temperature Levels&quot;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperpyrexia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Body Temperature Levels&quot;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Glucose Levels&quot;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Glucose Levels&quot;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Intracranial Pressure Levels&quot;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Intracranial Pressure Levels&quot;</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline International Normalized Ratio (INR)&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 International Normalized Ratio (INR)&quot;</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_DNR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Do not Resuscitate&quot;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span><span class="st">&quot;Day 30 Binarized mRS after Treatment&quot;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>site_continent) <span class="ot">&lt;-</span> <span class="st">&quot;Continent&quot;</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> site_continent,</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="Rtable1"><table class="Rtable1-zebra"><caption>Demographic Clinical Characteristics of Patients</caption>
@@ -4164,38 +4156,38 @@ white-space: normal;
 <h1>Methods</h1>
 <section id="splitting-data" class="level2">
 <h2 class="anchored" data-anchor-id="splitting-data">Splitting Data</h2>
-<p><strong>??use dataset after removing NAs?</strong></p>
+<!-- **??use dataset after removing NAs?** Yes -->
 <p>We will randomly split the full dataset into approximately 20% “held-out” test data and 80% training data within each continent group.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Set seed and split data ----</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">643</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># randomly sample 62 sites (approx 80% of 78 total sites) for train and validation dataset, WITHIN CONTINENT GROUPS</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">&lt;-</span> <span class="fu">unique</span>(complete_df[, <span class="fu">c</span>(<span class="st">&quot;sitename&quot;</span>, <span class="st">&quot;site_continent&quot;</span>)])</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>train_valid_sites <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">slice_sample</span>(sites, <span class="at">by =</span> site_continent, <span class="at">prop =</span> <span class="fl">0.8</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>train_valid <span class="ot">&lt;-</span> complete_df[complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename, ]</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> complete_df[<span class="sc">!</span>(complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename), ]</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># rm(sites, train_valid_sites)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Set seed and split data ----</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">643</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co"># randomly sample 62 sites (approx 80% of 78 total sites) for train and validation dataset, WITHIN CONTINENT GROUPS</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">&lt;-</span> <span class="fu">unique</span>(complete_df[, <span class="fu">c</span>(<span class="st">&quot;sitename&quot;</span>, <span class="st">&quot;site_continent&quot;</span>)])</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>train_valid_sites <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">slice_sample</span>(sites, <span class="at">by =</span> site_continent, <span class="at">prop =</span> <span class="fl">0.8</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>train_valid <span class="ot">&lt;-</span> complete_df[complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename, ]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> complete_df[<span class="sc">!</span>(complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename), ]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># rm(sites, train_valid_sites)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>Now look at the clinical characteristics of patients within traning data and testing data.</p>
+<p>Now look at the clinical characteristics of patients within training data and testing data.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>train_index <span class="ot">&lt;-</span> <span class="fu">which</span>(complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>complete_df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="st">&quot;Testing Data&quot;</span>, <span class="fu">nrow</span>(complete_df))</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>complete_df<span class="sc">$</span>type[train_index] <span class="ot">&lt;-</span> <span class="st">&quot;Training Data&quot;</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> type,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>train_index <span class="ot">&lt;-</span> <span class="fu">which</span>(complete_df<span class="sc">$</span>sitename <span class="sc">%in%</span> train_valid_sites<span class="sc">$</span>sitename)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>complete_df<span class="sc">$</span>type <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="st">&quot;Testing Data&quot;</span>, <span class="fu">nrow</span>(complete_df))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>complete_df<span class="sc">$</span>type[train_index] <span class="ot">&lt;-</span> <span class="st">&quot;Training Data&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> type,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="Rtable1"><table class="Rtable1-zebra"><caption>Demographic Clinical Characteristics of Patients</caption>

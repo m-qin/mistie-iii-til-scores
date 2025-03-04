@@ -119,8 +119,8 @@ data_analysis <- subset(data_merged, subset = !is.na(data_merged$glasgow_rankin_
 # }
 # View(missing_indices)
 
-missing_d7 <- data_analysis[which(is.na(data_analysis$Day7NEWscore_BP)), ]
-missing_d7$sitename # looks random, not systematic --> okay to impute during modeling
+# missing_d7 <- data_analysis[which(is.na(data_analysis$Day7NEWscore_BP)), ]
+# missing_d7$sitename # looks random, not systematic --> okay to impute during modeling
 
 # check which patients have any missing covariate
 n_complete <- sum(complete.cases(data_analysis)) # 477, which means there are 16 patients with at least 1 missing covariate
@@ -209,7 +209,7 @@ For all variables, higher scores denote increased severity and need for treatmen
 
 ## Splitting Data
 
-**??use dataset after removing NAs?**
+<!-- **??use dataset after removing NAs?** Yes -->
 
 We will randomly split the full dataset into approximately 20% “held-out” test data and 80% training data within each continent group.
 
@@ -225,7 +225,7 @@ test <- complete_df[!(complete_df$sitename %in% train_valid_sites$sitename), ]
 
 ```
 
-Now look at the clinical characteristics of patients within traning data and testing data.
+Now look at the clinical characteristics of patients within training data and testing data.
 
 ```{r}
 train_index <- which(complete_df$sitename %in% train_valid_sites$sitename)
