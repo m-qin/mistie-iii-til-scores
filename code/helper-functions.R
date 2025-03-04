@@ -73,9 +73,6 @@ rm_id_var <- function(data, vars_to_rm = "new_id"){
   return(data)
 }
 
-# Function to impute missing predictor values
-# TO DO
-
 # Function to calculate PPV from predictions and true values
 get_ppv <- function(pred_vals, true_vals){
   n_true_pos <- sum(pred_vals * true_vals)
