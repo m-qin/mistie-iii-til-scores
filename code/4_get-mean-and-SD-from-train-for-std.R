@@ -5,7 +5,7 @@ if (!("data.table" %in% installed.packages())){
 
 library(data.table)
 
-## Clear environment and Read in functions and data ----
+## Clear environment and Read in helper functions and data ----
 rm(list = ls())
 
 source(here::here("code/helper-functions.R"))

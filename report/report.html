@@ -3244,7 +3244,7 @@ white-space: normal;
 <p><strong>Independent Variables:</strong></p>
 <ul>
 <li><p>Predictors: Baseline and 7-day measures of control of blood pressure, glucose, fever, herniation, elevated intracranial pressure events and hypotension.</p></li>
-<li><p>Possible other predictors: age, Glasgow Coma Scale (GCS) at baseline, NIH stroke scale (NIHSS) at baseline, stable Intracerebral and Intraventricular volumes, and end of surgical evacuation ICH volume &lt;15 mL (i.e., whether patients who had surgery had successful removal of blood clot). We will adjust these variables in our model.</p></li>
+<li><p>Possible other predictors: age, Glasgow Coma Scale (GCS) at baseline, NIH stroke scale (NIHSS) at baseline, stable Intracerebral and Intraventricular volumes, end of surgical evacuation ICH volume &lt;15 mL (i.e., whether patients who had surgery had successful removal of blood clot), and deep ICH location. We will adjust these variables in our model.</p></li>
 <li><p>Clustering variables: Site (78 values) and continent (3 values: North America vs. Europe vs. Australia-Asia).</p></li>
 </ul>
 <div class="cell">
@@ -3253,44 +3253,15 @@ white-space: normal;
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># merge and subset vars</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>patients <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data/private/M3_data_499_TIL.dta&quot;</span>))</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>sites <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_dta</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data/private/M3_TIL_added_data.dta&quot;</span>))</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="do">## Extract variables of interest and Merge ----</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>cluster_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;sitename&quot;</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                  <span class="st">&quot;site_continent&quot;</span>)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>outcome_var <span class="ot">&lt;-</span> <span class="st">&quot;glasgow_rankin_0_3_30&quot;</span> <span class="co"># 1 if &quot;glasgow_rankin_30&quot; is 0-3 (57 values), 0 if &quot;glasgow_rankin_30&quot; is 4-6 (436 values); 6 NAs</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>stratifying_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;age_at_consent&quot;</span>, <span class="co"># integers (but treat as continuous), ranging from 28 to 90 (median 62, mean 61), unimodal, very slightly skew left</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;gcs_randomization&quot;</span>, <span class="co"># integers (but treat as continuous), ranging from 3 to 15 (median 10, mean 10.6), bimodal (around 8 and 13); high score is good</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;nihss_randomization&quot;</span>, <span class="co"># integers (but treat as continuous), ranging from 1 to 40 (median 19, mean 19), roughly normal</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;stabct_ich_volume&quot;</span>, <span class="co"># continuous, ranging from 20.9 to 127.1</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;stabct_ivh_volume&quot;</span>, <span class="co"># continuous, ranging from 0 to 61.8</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>                      <span class="st">&quot;eot_less_15&quot;</span>) <span class="co"># binary, 346 values of 0, 148 values of 1; 5 NAs</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Note: These are all categorical; we will treat them as unordered factors in our models, even though they are generally ordered in increasing severity.</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>predictor_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;BaselineNEWscore_BP&quot;</span>, <span class="co"># ordinal categorical variable (values of 0, 1, 2, 3, 4, 5)</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Day7NEWscore_BP&quot;</span>,     <span class="co"># ordinal categorical variable (values of 0, 1, 2, 3, 4, 5); 13 NAs</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_BP_control&quot;</span>, <span class="co"># to do: treat as factor (4 levels)</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_BP_control&quot;</span>, <span class="co"># to do: treat as factor (4 levels); 13 NAs</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_Hypotension&quot;</span>, <span class="co"># 480 values of 0, 17 values of 1, 2 values of 2</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_Hypotension&quot;</span>, <span class="co"># 480 values of 0, 29 values of 1, 13 values of 2; 13 NAs</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_Hyperpyrexia&quot;</span>, <span class="co"># values of 0, 1, 2, 3; 13 NAs</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_Hyperglycemia&quot;</span>, <span class="co"># values of 0, 1, 2, 3</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_ICP&quot;</span>, <span class="co"># 487 values of 0, 8 values of 1, 1 value of 2, 2 values of 3; 1 NA</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_herniation&quot;</span>, <span class="co"># 484 values of 0, 8 values of 1, 6 values of 2; 1 NA</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Baseline_INR&quot;</span>, <span class="co"># 466 values of 0, 24 values of 1, 9 values of 2</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_Hyperpyrexia&quot;</span>, <span class="co"># values of 0, 1, 2, 3; 13 NAs</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_Hyperglycemia&quot;</span>, <span class="co"># values of 0, 1, 2, 3; 13 NAs</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_ICP&quot;</span>, <span class="co"># 454 values of 0, 15 values of 1, 9 values of 2, 7 values of 3, 1 value of 4; 13 NAs</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_herniation&quot;</span>, <span class="co"># 474 values of 0, 6 values of 1, 6 values of 2; 13 NAs</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_INR&quot;</span>, <span class="co"># 462 values of 0, 13 values of 1, 11 values of 2; 13 NAs</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;D7_DNR&quot;</span>) <span class="co"># 489 values of 0, 4 values of 1, 2 values of 2, 4 values of 3</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>sites_subset <span class="ot">&lt;-</span> <span class="fu">subset</span>(sites, <span class="at">select =</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, cluster_vars))</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>patients_subset <span class="ot">&lt;-</span> <span class="fu">subset</span>(patients, <span class="at">select =</span> <span class="fu">c</span>(<span class="st">&quot;patientnum_ninds&quot;</span>, stratifying_vars, predictor_vars, outcome_var))</span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>data_merged <span class="ot">&lt;-</span> <span class="fu">merge</span>(sites_subset, patients_subset, <span class="at">by.x =</span> <span class="st">&quot;new_id&quot;</span>, <span class="at">by.y =</span> <span class="st">&quot;patientnum_ninds&quot;</span>) <span class="co"># &quot;new_id&quot; is kept as a column</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="do">## Exclude observations with missing outcome ----</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>data_analysis <span class="ot">&lt;-</span> <span class="fu">subset</span>(data_merged, <span class="at">subset =</span> <span class="sc">!</span><span class="fu">is.na</span>(data_merged<span class="sc">$</span>glasgow_rankin_0_3_30)) <span class="co"># exclude 6 observations with missing outcome</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Extract variables of interest and Merge ----</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;code/helper-functions.R&quot;</span>))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>sites_subset <span class="ot">&lt;-</span> <span class="fu">subset</span>(sites, <span class="at">select =</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, cluster_vars))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>patients_subset <span class="ot">&lt;-</span> <span class="fu">subset</span>(patients, <span class="at">select =</span> <span class="fu">c</span>(<span class="st">&quot;patientnum_ninds&quot;</span>, stratifying_vars, predictor_vars, outcome_var))</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>data_merged <span class="ot">&lt;-</span> <span class="fu">merge</span>(sites_subset, patients_subset, <span class="at">by.x =</span> <span class="st">&quot;new_id&quot;</span>, <span class="at">by.y =</span> <span class="st">&quot;patientnum_ninds&quot;</span>) <span class="co"># &quot;new_id&quot; is kept as a column</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="do">## Exclude observations with missing outcome ----</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>data_analysis <span class="ot">&lt;-</span> <span class="fu">subset</span>(data_merged, <span class="at">subset =</span> <span class="sc">!</span><span class="fu">is.na</span>(data_merged<span class="sc">$</span>glasgow_rankin_0_3_30)) <span class="co"># exclude 6 observations with missing outcome</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <section id="missingness" class="level2">
@@ -3364,35 +3335,36 @@ white-space: normal;
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ich_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intracerebral Volumes (mL)&quot;</span></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>stabct_ivh_volume) <span class="ot">&lt;-</span> <span class="st">&quot;Stable Intraventricular Volumes (mL)&quot;</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>eot_less_15) <span class="ot">&lt;-</span> <span class="st">&quot;End of Surgical Evacuation ICH Volume &lt;15 mL&quot;</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>BaselineNEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypertention Levels&quot;</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Day7NEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypertention Levels&quot;</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Blood Pressure Control Levels&quot;</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Blood Pressure Control Levels&quot;</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypotention Levels&quot;</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypotention Levels&quot;</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperpyrexia) <span class="ot">&lt;-</span>  <span class="st">&quot;Baseline Body Temperature Levels&quot;</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperpyrexia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Body Temperature Levels&quot;</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Glucose Levels&quot;</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Glucose Levels&quot;</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Intracranial Pressure Levels&quot;</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Intracranial Pressure Levels&quot;</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline International Normalized Ratio (INR)&quot;</span> <span class="co">#?</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 International Normalized Ratio (INR)&quot;</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_DNR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Do not Resuscitate&quot;</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span><span class="st">&quot;Day 30 Binarized mRS after Treatment&quot;</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>site_continent) <span class="ot">&lt;-</span> <span class="st">&quot;Continent&quot;</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> site_continent,</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>ich_deep_location) <span class="ot">&lt;-</span> <span class="st">&quot;Deep ICH Location&quot;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>BaselineNEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypertention Levels&quot;</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Day7NEWscore_BP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypertention Levels&quot;</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Blood Pressure Control Levels&quot;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_BP_control) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Blood Pressure Control Levels&quot;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Hypotention Levels&quot;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hypotension) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Hypotention Levels&quot;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperpyrexia) <span class="ot">&lt;-</span>  <span class="st">&quot;Baseline Body Temperature Levels&quot;</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperpyrexia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Body Temperature Levels&quot;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Glucose Levels&quot;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_Hyperglycemia) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Glucose Levels&quot;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Intracranial Pressure Levels&quot;</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_ICP) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Intracranial Pressure Levels&quot;</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_herniation) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Clinical Herniation Reversal&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>Baseline_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Baseline International Normalized Ratio (INR)&quot;</span> <span class="co">#?</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_INR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 International Normalized Ratio (INR)&quot;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>D7_DNR) <span class="ot">&lt;-</span> <span class="st">&quot;Day 7 Do not Resuscitate&quot;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>glasgow_rankin_0_3_30) <span class="ot">&lt;-</span><span class="st">&quot;Day 30 Binarized mRS after Treatment&quot;</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="fu">label</span>(complete_df<span class="sc">$</span>site_continent) <span class="ot">&lt;-</span> <span class="st">&quot;Continent&quot;</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>caption <span class="ot">&lt;-</span> <span class="st">&quot;Demographic Clinical Characteristics of Patients&quot;</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>footnote <span class="ot">&lt;-</span> <span class="st">&quot;mRS modified Rankin score&quot;</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>table1<span class="sc">::</span><span class="fu">table1</span>(<span class="sc">~</span> . <span class="sc">|</span> site_continent,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>               <span class="co"># labels = var_labels,</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>       <span class="at">data =</span> complete_df[, <span class="sc">!</span>(<span class="fu">names</span>(complete_df) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;new_id&quot;</span>, <span class="st">&quot;sitename&quot;</span>))],</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption =</span> caption,</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>       <span class="at">caption.placement =</span> <span class="st">&quot;top&quot;</span>,</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>       <span class="at">footnote =</span> footnote,</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>       <span class="at">topclass=</span><span class="st">&quot;Rtable1-zebra&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="Rtable1"><table class="Rtable1-zebra"><caption>Demographic Clinical Characteristics of Patients</caption>
@@ -3534,6 +3506,27 @@ white-space: normal;
 <td class="lastrow">23 (28.4%)</td>
 <td class="lastrow">122 (31.9%)</td>
 <td class="lastrow">148 (31.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Deep ICH Location</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">0</td>
+<td>4 (28.6%)</td>
+<td>28 (34.6%)</td>
+<td>148 (38.7%)</td>
+<td>180 (37.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">1</td>
+<td class="lastrow">10 (71.4%)</td>
+<td class="lastrow">53 (65.4%)</td>
+<td class="lastrow">234 (61.3%)</td>
+<td class="lastrow">297 (62.3%)</td>
 </tr>
 <tr>
 <td class="rowlabel firstrow">Baseline Hypertention Levels</td>
@@ -4334,6 +4327,24 @@ white-space: normal;
 <td class="lastrow">33 (30.0%)</td>
 <td class="lastrow">115 (31.3%)</td>
 <td class="lastrow">148 (31.0%)</td>
+</tr>
+<tr>
+<td class="rowlabel firstrow">Deep ICH Location</td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+<td class="firstrow"></td>
+</tr>
+<tr>
+<td class="rowlabel">0</td>
+<td>47 (42.7%)</td>
+<td>133 (36.2%)</td>
+<td>180 (37.7%)</td>
+</tr>
+<tr>
+<td class="rowlabel lastrow">1</td>
+<td class="lastrow">63 (57.3%)</td>
+<td class="lastrow">234 (63.8%)</td>
+<td class="lastrow">297 (62.3%)</td>
 </tr>
 <tr>
 <td class="rowlabel firstrow">Baseline Hypertention Levels</td>
