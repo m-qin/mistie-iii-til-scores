@@ -13,6 +13,9 @@ train_valid <- data.table::fread(here::here("data/private/train_and_valid_std_da
   rm_id_var()
 # to do: impute missing predictor values
 
+## Set seed for random forest model ----
+set.seed(2025)
+
 ## Fit models ----
 
 # logistic_model <- glm()
