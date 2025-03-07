@@ -63,7 +63,9 @@ quant_vars <- c("age_at_consent", # integers (but treat as continuous), ranging 
 bin_vars <- c("Binarized_Baseline_Hypotension",
               "Binarized_Baseline_ICP",
               "Binarized_Baseline_herniation",
-              "Binarized_D7_DNR")
+              "Binarized_D7_DNR",
+              "eot_less_15",
+              "ich_deep_location")
 
 cat_vars <- modif_predictor_vars[!(modif_predictor_vars %in% bin_vars)]
 
@@ -71,9 +73,16 @@ cat_vars <- modif_predictor_vars[!(modif_predictor_vars %in% bin_vars)]
 ## Functions ----
 
 # Function to factor all categorical variables as unordered
-factor_cat_predictors <- function(data){
-  for (var in cat_vars){
-    data[[var]] <- factor(data[[var]], ordered = FALSE)
+factor_cat_predictors <- function(data, ref_data = NULL){
+  if (!is.null(ref_data)){
+    for (var in cat_vars){
+      var_levels <- levels(ref_data[[var]])
+      data[[var]] <- factor(data[[var]], ordered = FALSE, levels = var_levels)
+    }
+  } else{
+    for (var in cat_vars){
+      data[[var]] <- factor(data[[var]], ordered = FALSE)
+    }
   }
   return(data)
 }

@@ -2,9 +2,12 @@
 if (!("data.table" %in% installed.packages())){
   install.packages("data.table")
 }
-if (!("lme4" %in% installed.packages())){
-  install.packages("lme4")
-}
+# if (!("lme4" %in% installed.packages())){
+#   install.packages("lme4")
+# }
+# if (!("gee" %in% installed.packages())){
+#   install.packages("gee")
+# }
 if (!("glmnet" %in% installed.packages())){
   install.packages("glmnet")
 }
@@ -16,7 +19,8 @@ if (!("pROC" %in% installed.packages())){
 }
 
 library(data.table)
-library(lme4) # for random effects
+# library(lme4) # for random effects
+# library(gee)
 library(randomForest)
 library(glmnet)
 library(pROC) # for AUC
@@ -42,14 +46,26 @@ set.seed(2025)
 
 ## Fit models on training data ----
 
-# to do: try interacting blood pressure variables at baseline with each other, and blood pressure variables at D7 with each other (get error?)
+# tried interacting blood pressure variables at baseline with each other, and blood pressure variables at D7 with each other, but get error or NAs?
+# Warning message:
+# glm.fit: fitted probabilities numerically 0 or 1 occurred 
 logistic_without_site <- glm(glasgow_rankin_0_3_30 ~ .,
                              data = train_valid_without_site,
                              family = "binomial")
 
-logistic_with_site_rand_intercept <- glmer(glasgow_rankin_0_3_30 ~ . + (1|sitename),
-                                           data = train_valid,
-                                           family = "binomial")
+# # doesn't work for predicting at a new site
+# logistic_with_site_rand_intercept <- glmer(glasgow_rankin_0_3_30 ~ . + (1|sitename),
+#                                            data = train_valid,
+#                                            family = "binomial")
+
+# # original error from including all predictors: rank-deficient model matrix
+# # Cgee: error: logistic model for probability has fitted value very close to 1.
+# estimates diverging; iteration terminated.
+# gee_exchangeable <- gee(formula = glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent,
+#                         id = factor(sitename),
+#                         data = train_valid,
+#                         family = "binomial",
+#                         corstr = "exchangeable")
 
 lasso_cv <- cv.glmnet(x = train_as_model_matrix,
                       y = train_valid$glasgow_rankin_0_3_30,
@@ -63,63 +79,86 @@ lasso_logistic <- glmnet(x = train_as_model_matrix,
                          standardize = FALSE,
                          alpha = 1)
 
-# should sitename be removed?
+ridge_cv <- cv.glmnet(x = train_as_model_matrix,
+                      y = train_valid$glasgow_rankin_0_3_30,
+                      family = "binomial",
+                      standardize = FALSE,
+                      alpha = 0)
+ridge_logistic <- glmnet(x = train_as_model_matrix,
+                         y = train_valid$glasgow_rankin_0_3_30,
+                         lambda = lasso_cv$lambda.1se,
+                         family = "binomial",
+                         standardize = FALSE,
+                         alpha = 0)
+
 rf <- randomForest(factor(glasgow_rankin_0_3_30) ~ ., # factor() tells randomForest that outcome is binary
-                            data = train_valid,
+                            data = train_valid_without_site, # to be fair against other models (and realize that sitename may not be helpful for predicting at a new site)
                             mtry = sqrt(ncol(train_valid) - 1),
                             importance = TRUE)
 
 # rf$importance[, "1"] |>
 #   sort(decreasing = TRUE) |>
 #   round(digits = 3)
-# nihss_randomization      ich_deep_location      gcs_randomization 
-# 0.1394448892           0.0596282831           0.0250708712 
-# stabct_ivh_volume      stabct_ich_volume               sitename 
-# 0.0196552207           0.0089296016           0.0071936616
 
-# different seed
-# nihss_randomization      ich_deep_location      gcs_randomization 
-# 0.130                  0.062                  0.029 
-# stabct_ivh_volume      stabct_ich_volume        Day7NEWscore_BP 
-# 0.022                  0.020                  0.007 
-# eot_less_15    BaselineNEWscore_BP         site_continent 
-# 0.005                  0.005                  0.004
-# age_at_consent       D7_Hyperglycemia    Baseline_BP_control 
-# 0.003                  0.003                  0.003
+# printing the results that were > 0
+# nihss_randomization              ich_deep_location 
+# 0.144                          0.063 
+# gcs_randomization              stabct_ivh_volume 
+# 0.030                          0.027 
+# stabct_ich_volume                 age_at_consent 
+# 0.014                          0.011 
+# D7_Hyperglycemia            Baseline_BP_control 
+# 0.006                          0.005 
+# eot_less_15            BaselineNEWscore_BP 
+# 0.005                          0.002 
+# site_continent          Baseline_Hyperpyrexia 
+# 0.001                          0.001 
 
-rf_logistic <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization +
-                     stabct_ivh_volume + stabct_ich_volume + Day7NEWscore_BP + eot_less_15 + BaselineNEWscore_BP + site_continent +
-                     age_at_consent + D7_Hyperglycemia + Baseline_BP_control,
+# Warning message:
+# glm.fit: fitted probabilities numerically 0 or 1 occurred 
+rf_logistic <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent + # variable importance > 0.1
+                     D7_Hyperglycemia + Baseline_BP_control + eot_less_15 + BaselineNEWscore_BP + site_continent + Baseline_Hyperpyrexia, # variable importance > 0
                    data = train_valid_without_site,
                    family = "binomial")
 
+linear_without_site <- lm(glasgow_rankin_0_3_30 ~ .,
+                           data = train_valid_without_site)
 
 ## Get "weights" for predicting patients' status ----
 
-# to do: check signif
+# logistic
+logistic_all_coefs <- summary(logistic_without_site)$coefficients |>
+  as.data.table() # oops, no variable names
+logistic_nonzero_coefs <- logistic_all_coefs[`Pr(>|z|)` <= 0.05]
 sort(coef(logistic_without_site))
+
+# lasso
 coef(lasso_logistic) # [coef(lasso_logistic) != 0] # doesn't have variable names
+lasso_nonzero_coefs <- data.table(Variable = c("Intercept", "age_at_consent", "nihss_randomization", "stabct_ich_volume", "stabct_ivh_volume", "ich_deep_location", "Day7NEWscore_BP1"),
+                                  Coefficient = c(-2.43388827, -0.15972434, -1.36584301, -0.29351679, -0.04133074, -0.53945129, 0.02983276))
+
+# ridge
+
+# random forest
 sort(coef(rf_logistic))
 
 
 ## Predict in test set ----
 test <- data.table::fread(here::here("data/private/test_std_data_split_by_site_within_continent.csv")) |>
-  factor_cat_predictors() |>
+  factor_cat_predictors(ref_data = train_valid) |> # oops, this should've been done with the levels in the training data
   rm_id_var()
 
 test_without_site <- copy(test)
 test_without_site[, sitename := NULL]
-test_without_site_hypotension_coded_as_binary <- copy(test_without_site)
-test_without_site_hypotension_coded_as_binary[, Baseline_Hypotension := fcase(Baseline_Hypotension %in% c("1", "2"), "1",
-                                                                              Baseline_Hypotension == "0", "0")]
-test_without_site_hypotension_coded_as_binary_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
-                                                                     data = test_without_site_hypotension_coded_as_binary)
 
-# logistic regression
+test_without_site_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
+                                        data = test_without_site)
+
+## Logistic regression
 logistic_without_site_pred_prob <- predict(logistic_without_site,
-                                           newdata = test_without_site_hypotension_coded_as_binary) # log odds scale
+                                           newdata = test_without_site) # log odds scale
 logistic_without_site_preds <- predict(logistic_without_site,
-                                       newdata = test_without_site_hypotension_coded_as_binary,
+                                       newdata = test_without_site,
                                        type = "response") # predicted probability scale
 hist(logistic_without_site_preds) # histogram of predicted probabilities (most are close to 0)
 summary(logistic_without_site_preds)
@@ -133,19 +172,54 @@ logistic_without_site_roc <- roc(predictor = logistic_without_site_preds, respon
 plot(logistic_without_site_roc)
 auc(logistic_without_site_roc)
 
-# to do: logistic with random intercept (Error in terms.formula(ff) : '.' in formula and no 'data' argument (maybe the error is because the sitenames are new)
-# logistic_with_site_rand_intercept_pred_prob <- predict(logistic_with_site_rand_intercept,
-#                                                        newdata = test_without_site)
 
-# to do: LASSO logistic (Error: The number of variables in newx must be 59)
-# lasso_pred_prob <- predict(lasso_logistic,
-#                            newx = test_without_site_hypotension_coded_as_binary_matrix)
+## LASSO logistic
+lasso_probs <- predict(lasso_logistic,
+                       newx = test_without_site_matrix)
+lasso_preds <- predict(lasso_logistic,
+                         newx = test_without_site_matrix,
+                         type = "response") |>
+  as.vector()
 
-# RF logistic
+hist(lasso_preds) # histogram of predicted probabilities (most are close to 0)
+summary(lasso_preds)
+
+# PPV for different thresholds
+get_ppv(pred_vals = lasso_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = lasso_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+lasso_roc <- roc(predictor = lasso_preds, response = test$glasgow_rankin_0_3_30)
+plot(lasso_roc)
+auc(lasso_roc)
+
+
+## Ridge logistic
+ridge_probs <- predict(ridge_logistic,
+                       newx = test_without_site_matrix)
+ridge_preds <- predict(ridge_logistic,
+                       newx = test_without_site_matrix,
+                       type = "response") |>
+  as.vector()
+
+hist(ridge_preds) # histogram of predicted probabilities (most are close to 0)
+summary(ridge_preds)
+
+# PPV for different thresholds
+get_ppv(pred_vals = ridge_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = ridge_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+ridge_roc <- roc(predictor = ridge_preds, response = test$glasgow_rankin_0_3_30)
+plot(ridge_roc)
+auc(ridge_roc)
+
+
+## RF logistic
 rf_logistic_pred_prob <- predict(rf_logistic,
-                                 newdata = test_without_site_hypotension_coded_as_binary)
+                                 newdata = test_without_site)
 rf_logistic_preds <- predict(rf_logistic,
-                             newdata = test_without_site_hypotension_coded_as_binary,
+                             newdata = test_without_site,
                              type = "response")
 
 hist(rf_logistic_preds)
