@@ -38,6 +38,10 @@ if (!dir.exists(here::here("results/ROC-curves"))){
   dir.create(here::here("results/ROC-curves"), recursive = TRUE)
 }
 
+if (!dir.exists(here::here("results/PPVs"))){
+  dir.create(here::here("results/PPVs"), recursive = TRUE)
+}
+
 
 ## Set seed for cross-validation (LASSO) ----
 set.seed(2025)
@@ -144,10 +148,11 @@ test_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
                             data = test)
 
 predicted_probs_on_test <- function(model){
-  return(predict(model, newdata = test, type = "response"))
-}
-predicted_probs_on_test_matrix<- function(model){ # for LASSO models
-  return(as.vector(predict(model, newx = test_matrix, type = "response")))
+  if ("glmnet" %in% class(model)){ # for LASSO models
+    return(as.vector(predict(model, newx = test_matrix, type = "response")))
+  } else{
+    return(predict(model, newdata = test, type = "response"))
+  }
 }
 roc_on_test <- function(probs){
   return(roc(predictor = probs, response = test$glasgow_rankin_0_3_30))
@@ -168,14 +173,33 @@ save_roc_on_test <- function(model, filepath, title){
   save_roc(probs, filepath, title)
   return(NULL)
 }
-save_roc_on_test_matrix <- function(model, filepath, title){
-  probs <- predicted_probs_on_test_matrix(model)
-  save_roc(probs, filepath, title)
+save_ppv_on_test <- function(model, filepath, cutoff = 0.119891){ # 0.119891 is the prevalence in the training data; like an empirical Bayes prior here
+  ppv <- get_ppv(predicted_probs_on_test(model),
+                 test$glasgow_rankin_0_3_30) |>
+    round(4)
+  ppv_as_dt <- data.table(Model = filepath,
+                          Cutoff = cutoff,
+                          PPV = ppv)
+  fwrite(ppv_as_dt, here::here(paste0("results/PPVs/", filepath)))
   return(NULL)
 }
 
 save_roc_on_test(logistic, "logistic-model", "Logistic Regression")
-save_roc_on_test_matrix(lasso_logistic, "lasso-logistic-model", "LASSO Logistic Regression")
-save_roc_on_test_matrix(lasso_linear, "lasso-linear-model", "LASSO Linear Regression")
+save_roc_on_test(lasso_logistic, "lasso-logistic-model", "LASSO Logistic Regression")
+save_roc_on_test(lasso_linear, "lasso-linear-model", "LASSO Linear Regression")
 save_roc_on_test(step_logistic, "step-logistic-model", "Stepwise Selection Logistic Regression")
 save_roc_on_test(step_linear, "step-linear-model", "Stepwise Selection Linear Regression")
+
+save_ppv_on_test(logistic, "logistic-model")
+save_ppv_on_test(lasso_logistic, "lasso-logistic-model")
+save_ppv_on_test(lasso_linear, "lasso-linear-model")
+save_ppv_on_test(step_logistic, "step-logistic-model")
+save_ppv_on_test(step_linear, "step-linear-model")
+
+# combine PPV csvs into 1 csv
+ppv_files <- paste0(here::here("results/PPVs/"),
+                    list.files(here::here("results/PPVs/")))
+ppv_table <- lapply(ppv_files, fread) |>
+  rbindlist()
+file.remove(ppv_files)
+fwrite(ppv_table, here::here("results/PPVs/all-model-PPVs.csv"))
