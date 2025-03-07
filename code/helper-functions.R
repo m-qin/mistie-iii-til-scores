@@ -114,3 +114,8 @@ get_ppv <- function(pred_vals, true_vals){
   ppv <- n_true_pos / (n_true_pos + n_false_pos)
   return(ppv)
 }
+
+# Function for expit function (inverse of logit function)
+expit <- function(x){
+  return(1 / (1 + exp(-x)))
+}

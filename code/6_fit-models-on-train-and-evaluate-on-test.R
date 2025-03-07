@@ -121,8 +121,38 @@ rf_logistic <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_locati
                    data = train_valid_without_site,
                    family = "binomial")
 
+rf_logistic0.1 <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent, # variable importance > 0.1
+                   data = train_valid_without_site,
+                   family = "binomial")
+
 linear_without_site <- lm(glasgow_rankin_0_3_30 ~ .,
                            data = train_valid_without_site)
+
+lasso_linear_cv <- cv.glmnet(x = train_as_model_matrix,
+                      y = train_valid$glasgow_rankin_0_3_30,
+                      standardize = FALSE,
+                      alpha = 1)
+lasso_linear <- glmnet(x = train_as_model_matrix,
+                         y = train_valid$glasgow_rankin_0_3_30,
+                         lambda = lasso_cv$lambda.1se,
+                         standardize = FALSE,
+                         alpha = 1)
+
+# bi-directional stepwise logistic
+intercept_only <- glm(glasgow_rankin_0_3_30 ~ 1,
+                      data = train_valid_without_site,
+                      family = "binomial")
+all <- glm(glasgow_rankin_0_3_30 ~ .,
+                      data = train_valid_without_site,
+                      family = "binomial")
+both <- step(intercept_only, direction='both', scope=formula(all), trace=0)
+
+# bi-directional stepwise linear
+intercept_only_linear <- glm(glasgow_rankin_0_3_30 ~ 1,
+                      data = train_valid_without_site)
+all_linear <- glm(glasgow_rankin_0_3_30 ~ .,
+           data = train_valid_without_site)
+both_linear <- step(intercept_only_linear, direction='both', scope=formula(all_linear), trace=0)
 
 ## Get "weights" for predicting patients' status ----
 
@@ -138,9 +168,17 @@ lasso_nonzero_coefs <- data.table(Variable = c("Intercept", "age_at_consent", "n
                                   Coefficient = c(-2.43388827, -0.15972434, -1.36584301, -0.29351679, -0.04133074, -0.53945129, 0.02983276))
 
 # ridge
+coef(ridge_logistic) # can compare with LASSO results
 
 # random forest
 sort(coef(rf_logistic))
+
+# lasso linear
+coef(lasso_linear)
+
+# bi-directional stepwise
+both$anova
+summary(both)
 
 
 ## Predict in test set ----
@@ -230,3 +268,97 @@ get_ppv(pred_vals = rf_logistic_preds > 0.5, true_vals = test$glasgow_rankin_0_3
 rf_logistic_roc <- roc(predictor = rf_logistic_preds, response = test$glasgow_rankin_0_3_30)
 plot(rf_logistic_roc)
 auc(rf_logistic_roc)
+
+rf_logistic0.1_log_odds <- predict(rf_logistic0.1,
+                                 newdata = test_without_site)
+rf_logistic0.1_probs <- predict(rf_logistic0.1,
+                             newdata = test_without_site,
+                             type = "response")
+
+hist(rf_logistic0.1_probs)
+summary(rf_logistic0.1_probs)
+get_ppv(pred_vals = rf_logistic0.1_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = rf_logistic0.1_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+rf_logistic0.1_roc <- roc(predictor = rf_logistic0.1_probs, response = test$glasgow_rankin_0_3_30)
+plot(rf_logistic0.1_roc)
+auc(rf_logistic0.1_roc)
+
+## Linear regression
+linear_probs <- predict(linear_without_site,
+                          newdata = test_without_site) # predicted probability scale
+hist(linear_probs) # histogram of predicted probabilities (most are close to 0)
+summary(linear_probs)
+
+# PPV for different thresholds
+get_ppv(pred_vals = linear_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = linear_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+linear_without_site_roc <- roc(predictor = linear_probs, response = test$glasgow_rankin_0_3_30)
+plot(linear_without_site_roc)
+auc(linear_without_site_roc)
+
+## LASSO linear
+lasso_linear_probs <- predict(lasso_linear,
+                       newx = test_without_site_matrix) |>
+  as.vector()
+
+hist(lasso_linear_probs) # histogram of predicted probabilities (most are close to 0)
+summary(lasso_linear_probs)
+
+# PPV for different thresholds
+get_ppv(pred_vals = lasso_linear_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = lasso_linear_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+lasso_linear_roc <- roc(predictor = lasso_linear_probs, response = test$glasgow_rankin_0_3_30)
+plot(lasso_linear_roc, main = "LASSO linear regression")
+auc(lasso_linear_roc)
+
+## Bi-directional stepwise
+both_step_log_odds <- predict(both,
+                              newdata = test_without_site) # log odds scale
+both_step_probs <- predict(both,
+                           newdata = test_without_site,
+                           type = "response") # predicted probability scale
+hist(both_step_probs) # histogram of predicted probabilities (most are close to 0)
+summary(both_step_probs)
+
+# PPV for different thresholds
+get_ppv(pred_vals = both_step_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = both_step_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+both_step_roc <- roc(predictor = both_step_probs, response = test$glasgow_rankin_0_3_30)
+plot(both_step_roc)
+auc(both_step_roc)
+
+## Bi-directional stepwise linear regression
+both_step_probs_linear <- predict(both_linear,
+                           newdata = test_without_site,
+                           type = "response") # predicted probability scale
+hist(both_step_probs_linear) # histogram of predicted probabilities (most are close to 0)
+summary(both_step_probs_linear)
+
+# PPV for different thresholds
+get_ppv(pred_vals = both_step_probs_linear > 0.11, true_vals = test$glasgow_rankin_0_3_30)
+get_ppv(pred_vals = both_step_probs_linear > 0.5, true_vals = test$glasgow_rankin_0_3_30)
+
+# ROC curve
+both_step_linear_roc <- roc(predictor = both_step_probs_linear, response = test$glasgow_rankin_0_3_30)
+plot(both_step_linear_roc)
+auc(both_step_linear_roc)
+
+
+
+## TO DO: Write helper functions for all of the above
+
+## Scratchwork ----
+test_only_weighted_vars <- copy(test)
+test_only_weighted_vars[, `:=`(Intercept = 1,
+                               Day7NEWscore_BP1 = 1 * (Day7NEWscore_BP == "1"))]
+test_only_weighted_vars <- subset(test_only_weighted_vars, select = lasso_nonzero_coefs$Variable)
+preds <- as.matrix(test_only_weighted_vars) %*% lasso_nonzero_coefs$Coefficient
+head(preds)
+head(expit(preds))
