@@ -2,30 +2,18 @@
 if (!("data.table" %in% installed.packages())){
   install.packages("data.table")
 }
-# if (!("lme4" %in% installed.packages())){
-#   install.packages("lme4")
-# }
-# if (!("gee" %in% installed.packages())){
-#   install.packages("gee")
-# }
 if (!("glmnet" %in% installed.packages())){
   install.packages("glmnet")
-}
-if (!("randomForest" %in% installed.packages())){
-  install.packages("randomForest")
 }
 if (!("pROC" %in% installed.packages())){
   install.packages("pROC")
 }
 
 library(data.table)
-# library(lme4) # for random effects
-# library(gee)
-library(randomForest)
-library(glmnet)
+library(glmnet) # for LASSO
 library(pROC) # for AUC
 
-## Clear environment and Read in helper functions and data ----
+## Clear environment, Read in helper functions and data, Set up results folder ----
 rm(list = ls())
 
 source(here::here("code/helper-functions.R"))
@@ -33,332 +21,161 @@ source(here::here("code/helper-functions.R"))
 train_valid <- data.table::fread(here::here("data/private/train_and_valid_std_data_split_by_site_within_continent.csv")) |>
   factor_cat_predictors() |>
   rm_id_var()
-
-train_valid_without_site <- copy(train_valid)
-train_valid_without_site[, sitename := NULL]
+train_valid[, sitename := NULL]
 
 train_as_model_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
-                                      data = train_valid_without_site)
+                                      data = train_valid)
+
+if (!dir.exists(here::here("results/weights/log-odds-scale"))){
+  dir.create(here::here("results/weights/log-odds-scale"), recursive = TRUE)
+}
+
+if (!dir.exists(here::here("results/weights/probability-scale"))){
+  dir.create(here::here("results/weights/probability-scale"), recursive = TRUE)
+}
+
+if (!dir.exists(here::here("results/ROC-curves"))){
+  dir.create(here::here("results/ROC-curves"), recursive = TRUE)
+}
 
 
-## Set seed for random forest model ----
+## Set seed for cross-validation (LASSO) ----
 set.seed(2025)
 
 ## Fit models on training data ----
 
-# tried interacting blood pressure variables at baseline with each other, and blood pressure variables at D7 with each other, but get error or NAs?
+# Logistic regression
 # Warning message:
 # glm.fit: fitted probabilities numerically 0 or 1 occurred 
-logistic_without_site <- glm(glasgow_rankin_0_3_30 ~ .,
-                             data = train_valid_without_site,
-                             family = "binomial")
+logistic <- glm(glasgow_rankin_0_3_30 ~ .,
+                 data = train_valid,
+                 family = "binomial")
 
-# # doesn't work for predicting at a new site
-# logistic_with_site_rand_intercept <- glmer(glasgow_rankin_0_3_30 ~ . + (1|sitename),
-#                                            data = train_valid,
-#                                            family = "binomial")
-
-# # original error from including all predictors: rank-deficient model matrix
-# # Cgee: error: logistic model for probability has fitted value very close to 1.
-# estimates diverging; iteration terminated.
-# gee_exchangeable <- gee(formula = glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent,
-#                         id = factor(sitename),
-#                         data = train_valid,
-#                         family = "binomial",
-#                         corstr = "exchangeable")
-
-lasso_cv <- cv.glmnet(x = train_as_model_matrix,
+# LASSO logistic regression
+lasso_logistic_cv <- cv.glmnet(x = train_as_model_matrix,
                       y = train_valid$glasgow_rankin_0_3_30,
                       family = "binomial",
                       standardize = FALSE,
                       alpha = 1)
 lasso_logistic <- glmnet(x = train_as_model_matrix,
                          y = train_valid$glasgow_rankin_0_3_30,
-                         lambda = lasso_cv$lambda.1se,
+                         lambda = lasso_logistic_cv$lambda.1se,
                          family = "binomial",
                          standardize = FALSE,
                          alpha = 1)
 
-ridge_cv <- cv.glmnet(x = train_as_model_matrix,
-                      y = train_valid$glasgow_rankin_0_3_30,
-                      family = "binomial",
-                      standardize = FALSE,
-                      alpha = 0)
-ridge_logistic <- glmnet(x = train_as_model_matrix,
-                         y = train_valid$glasgow_rankin_0_3_30,
-                         lambda = lasso_cv$lambda.1se,
-                         family = "binomial",
-                         standardize = FALSE,
-                         alpha = 0)
+# # Linear regression
+# linear <- lm(glasgow_rankin_0_3_30 ~ .,
+#              data = train_valid)
 
-rf <- randomForest(factor(glasgow_rankin_0_3_30) ~ ., # factor() tells randomForest that outcome is binary
-                            data = train_valid_without_site, # to be fair against other models (and realize that sitename may not be helpful for predicting at a new site)
-                            mtry = sqrt(ncol(train_valid) - 1),
-                            importance = TRUE)
-
-# rf$importance[, "1"] |>
-#   sort(decreasing = TRUE) |>
-#   round(digits = 3)
-
-# printing the results that were > 0
-# nihss_randomization              ich_deep_location 
-# 0.144                          0.063 
-# gcs_randomization              stabct_ivh_volume 
-# 0.030                          0.027 
-# stabct_ich_volume                 age_at_consent 
-# 0.014                          0.011 
-# D7_Hyperglycemia            Baseline_BP_control 
-# 0.006                          0.005 
-# eot_less_15            BaselineNEWscore_BP 
-# 0.005                          0.002 
-# site_continent          Baseline_Hyperpyrexia 
-# 0.001                          0.001 
-
-# Warning message:
-# glm.fit: fitted probabilities numerically 0 or 1 occurred 
-rf_logistic <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent + # variable importance > 0.1
-                     D7_Hyperglycemia + Baseline_BP_control + eot_less_15 + BaselineNEWscore_BP + site_continent + Baseline_Hyperpyrexia, # variable importance > 0
-                   data = train_valid_without_site,
-                   family = "binomial")
-
-rf_logistic0.1 <- glm(glasgow_rankin_0_3_30 ~ nihss_randomization + ich_deep_location + gcs_randomization + stabct_ivh_volume + stabct_ich_volume + age_at_consent, # variable importance > 0.1
-                   data = train_valid_without_site,
-                   family = "binomial")
-
-linear_without_site <- lm(glasgow_rankin_0_3_30 ~ .,
-                           data = train_valid_without_site)
-
+# LASSO linear regression
 lasso_linear_cv <- cv.glmnet(x = train_as_model_matrix,
-                      y = train_valid$glasgow_rankin_0_3_30,
-                      standardize = FALSE,
-                      alpha = 1)
+                            y = train_valid$glasgow_rankin_0_3_30,
+                            standardize = FALSE,
+                            alpha = 1)
 lasso_linear <- glmnet(x = train_as_model_matrix,
-                         y = train_valid$glasgow_rankin_0_3_30,
-                         lambda = lasso_cv$lambda.1se,
-                         standardize = FALSE,
-                         alpha = 1)
+                       y = train_valid$glasgow_rankin_0_3_30,
+                       lambda = lasso_linear_cv$lambda.1se,
+                       standardize = FALSE,
+                       alpha = 1)
 
-# bi-directional stepwise logistic
-intercept_only <- glm(glasgow_rankin_0_3_30 ~ 1,
-                      data = train_valid_without_site,
+# Bi-directional stepwise logistic regression
+intercept_only_logistic <- glm(glasgow_rankin_0_3_30 ~ 1,
+                              data = train_valid,
+                              family = "binomial")
+all_logistic <- glm(glasgow_rankin_0_3_30 ~ .,
+                      data = train_valid,
                       family = "binomial")
-all <- glm(glasgow_rankin_0_3_30 ~ .,
-                      data = train_valid_without_site,
-                      family = "binomial")
-both <- step(intercept_only, direction='both', scope=formula(all), trace=0)
+# 19 warnings of glm.fit: fitted probabilities numerically 0 or 1 occurred
+step_logistic <- step(intercept_only_logistic, direction='both', scope=formula(all_logistic), trace=0)
 
-# bi-directional stepwise linear
+# Bi-directional stepwise linear regression
 intercept_only_linear <- glm(glasgow_rankin_0_3_30 ~ 1,
-                      data = train_valid_without_site)
+                            data = train_valid)
 all_linear <- glm(glasgow_rankin_0_3_30 ~ .,
-           data = train_valid_without_site)
-both_linear <- step(intercept_only_linear, direction='both', scope=formula(all_linear), trace=0)
+                  data = train_valid)
+step_linear <- step(intercept_only_linear, direction='both', scope=formula(all_linear), trace=0)
+
 
 ## Get "weights" for predicting patients' status ----
 
 # logistic
-logistic_all_coefs <- summary(logistic_without_site)$coefficients |>
-  as.data.table() # oops, no variable names
-logistic_nonzero_coefs <- logistic_all_coefs[`Pr(>|z|)` <= 0.05]
-sort(coef(logistic_without_site))
+logistic_all_coefs_as_matrix <- summary(logistic)$coefficients
+logistic_all_coefs <- data.table(Variable = rownames(logistic_all_coefs_as_matrix)) |>
+  cbind(logistic_all_coefs_as_matrix)
+fwrite(logistic_all_coefs, here::here("results/weights/log-odds-scale/logistic-model.csv"))
 
-# lasso
-coef(lasso_logistic) # [coef(lasso_logistic) != 0] # doesn't have variable names
-lasso_nonzero_coefs <- data.table(Variable = c("Intercept", "age_at_consent", "nihss_randomization", "stabct_ich_volume", "stabct_ivh_volume", "ich_deep_location", "Day7NEWscore_BP1"),
-                                  Coefficient = c(-2.43388827, -0.15972434, -1.36584301, -0.29351679, -0.04133074, -0.53945129, 0.02983276))
-
-# ridge
-coef(ridge_logistic) # can compare with LASSO results
-
-# random forest
-sort(coef(rf_logistic))
+# lasso logistic
+# coef(lasso_logistic)
+lasso_logistic_coefs <- data.table(Variable = rownames(coef(lasso_logistic)),
+                                   Coefficient = as.vector(coef(lasso_logistic)))
+lasso_logistic_nonzero_coefs <- lasso_logistic_coefs[Coefficient != 0]
+fwrite(lasso_logistic_nonzero_coefs, here::here("results/weights/log-odds-scale/lasso-logistic-model.csv"))
 
 # lasso linear
-coef(lasso_linear)
+# coef(lasso_linear)
+lasso_linear_coefs <- data.table(Variable = rownames(coef(lasso_linear)),
+                                   Coefficient = as.vector(coef(lasso_linear)))
+lasso_linear_nonzero_coefs <- lasso_linear_coefs[Coefficient != 0]
+fwrite(lasso_linear_nonzero_coefs, here::here("results/weights/probability-scale/lasso-linear-model.csv"))
 
-# bi-directional stepwise
-both$anova
-summary(both)
+# bi-directional stepwise logistic
+# step_logistic$anova
+step_logistic_all_coefs_as_matrix <- summary(step_logistic)$coefficients
+step_logistic_all_coefs <- data.table(Variable = rownames(step_logistic_all_coefs_as_matrix)) |>
+  cbind(step_logistic_all_coefs_as_matrix)
+fwrite(step_logistic_all_coefs, here::here("results/weights/log-odds-scale/step-logistic-model.csv"))
+
+# bi-directional stepwise linear
+# step_linear$anova
+step_linear_all_coefs_as_matrix <- summary(step_linear)$coefficients
+step_linear_all_coefs <- data.table(Variable = rownames(step_linear_all_coefs_as_matrix)) |>
+  cbind(step_linear_all_coefs_as_matrix)
+fwrite(step_linear_all_coefs, here::here("results/weights/probability-scale/step-linear-model.csv"))
 
 
-## Predict in test set ----
+## Predict on test set, get ROC curves and AUC ----
 test <- data.table::fread(here::here("data/private/test_std_data_split_by_site_within_continent.csv")) |>
-  factor_cat_predictors(ref_data = train_valid) |> # oops, this should've been done with the levels in the training data
+  factor_cat_predictors(ref_data = train_valid) |>
   rm_id_var()
+test[, sitename := NULL]
 
-test_without_site <- copy(test)
-test_without_site[, sitename := NULL]
+test_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
+                            data = test)
 
-test_without_site_matrix <- model.matrix(glasgow_rankin_0_3_30 ~ .,
-                                        data = test_without_site)
+predicted_probs_on_test <- function(model){
+  return(predict(model, newdata = test, type = "response"))
+}
+predicted_probs_on_test_matrix<- function(model){ # for LASSO models
+  return(as.vector(predict(model, newx = test_matrix, type = "response")))
+}
+roc_on_test <- function(probs){
+  return(roc(predictor = probs, response = test$glasgow_rankin_0_3_30))
+}
+auc_on_test <- function(probs){
+  return(roc_on_test(probs) |>
+    auc() |>
+    round(4))
+}
+save_roc <- function(probs, filepath, title){
+  png(here::here(paste0("results/ROC-curves/", filepath, ".png")))
+  plot(roc_on_test(probs), main = paste0(title, ", AUC =", auc_on_test(probs)))
+  dev.off()
+  return(NULL) # to do: check if this is the best way to code returning nothing
+}
+save_roc_on_test <- function(model, filepath, title){
+  probs <- predicted_probs_on_test(model)
+  save_roc(probs, filepath, title)
+  return(NULL)
+}
+save_roc_on_test_matrix <- function(model, filepath, title){
+  probs <- predicted_probs_on_test_matrix(model)
+  save_roc(probs, filepath, title)
+  return(NULL)
+}
 
-## Logistic regression
-logistic_without_site_pred_prob <- predict(logistic_without_site,
-                                           newdata = test_without_site) # log odds scale
-logistic_without_site_preds <- predict(logistic_without_site,
-                                       newdata = test_without_site,
-                                       type = "response") # predicted probability scale
-hist(logistic_without_site_preds) # histogram of predicted probabilities (most are close to 0)
-summary(logistic_without_site_preds)
-
-# PPV for different thresholds
-get_ppv(pred_vals = logistic_without_site_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = logistic_without_site_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-logistic_without_site_roc <- roc(predictor = logistic_without_site_preds, response = test$glasgow_rankin_0_3_30)
-plot(logistic_without_site_roc)
-auc(logistic_without_site_roc)
-
-
-## LASSO logistic
-lasso_probs <- predict(lasso_logistic,
-                       newx = test_without_site_matrix)
-lasso_preds <- predict(lasso_logistic,
-                         newx = test_without_site_matrix,
-                         type = "response") |>
-  as.vector()
-
-hist(lasso_preds) # histogram of predicted probabilities (most are close to 0)
-summary(lasso_preds)
-
-# PPV for different thresholds
-get_ppv(pred_vals = lasso_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = lasso_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-lasso_roc <- roc(predictor = lasso_preds, response = test$glasgow_rankin_0_3_30)
-plot(lasso_roc)
-auc(lasso_roc)
-
-
-## Ridge logistic
-ridge_probs <- predict(ridge_logistic,
-                       newx = test_without_site_matrix)
-ridge_preds <- predict(ridge_logistic,
-                       newx = test_without_site_matrix,
-                       type = "response") |>
-  as.vector()
-
-hist(ridge_preds) # histogram of predicted probabilities (most are close to 0)
-summary(ridge_preds)
-
-# PPV for different thresholds
-get_ppv(pred_vals = ridge_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = ridge_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-ridge_roc <- roc(predictor = ridge_preds, response = test$glasgow_rankin_0_3_30)
-plot(ridge_roc)
-auc(ridge_roc)
-
-
-## RF logistic
-rf_logistic_pred_prob <- predict(rf_logistic,
-                                 newdata = test_without_site)
-rf_logistic_preds <- predict(rf_logistic,
-                             newdata = test_without_site,
-                             type = "response")
-
-hist(rf_logistic_preds)
-summary(rf_logistic_preds)
-get_ppv(pred_vals = rf_logistic_preds > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = rf_logistic_preds > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-rf_logistic_roc <- roc(predictor = rf_logistic_preds, response = test$glasgow_rankin_0_3_30)
-plot(rf_logistic_roc)
-auc(rf_logistic_roc)
-
-rf_logistic0.1_log_odds <- predict(rf_logistic0.1,
-                                 newdata = test_without_site)
-rf_logistic0.1_probs <- predict(rf_logistic0.1,
-                             newdata = test_without_site,
-                             type = "response")
-
-hist(rf_logistic0.1_probs)
-summary(rf_logistic0.1_probs)
-get_ppv(pred_vals = rf_logistic0.1_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = rf_logistic0.1_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-rf_logistic0.1_roc <- roc(predictor = rf_logistic0.1_probs, response = test$glasgow_rankin_0_3_30)
-plot(rf_logistic0.1_roc)
-auc(rf_logistic0.1_roc)
-
-## Linear regression
-linear_probs <- predict(linear_without_site,
-                          newdata = test_without_site) # predicted probability scale
-hist(linear_probs) # histogram of predicted probabilities (most are close to 0)
-summary(linear_probs)
-
-# PPV for different thresholds
-get_ppv(pred_vals = linear_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = linear_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-linear_without_site_roc <- roc(predictor = linear_probs, response = test$glasgow_rankin_0_3_30)
-plot(linear_without_site_roc)
-auc(linear_without_site_roc)
-
-## LASSO linear
-lasso_linear_probs <- predict(lasso_linear,
-                       newx = test_without_site_matrix) |>
-  as.vector()
-
-hist(lasso_linear_probs) # histogram of predicted probabilities (most are close to 0)
-summary(lasso_linear_probs)
-
-# PPV for different thresholds
-get_ppv(pred_vals = lasso_linear_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = lasso_linear_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-lasso_linear_roc <- roc(predictor = lasso_linear_probs, response = test$glasgow_rankin_0_3_30)
-plot(lasso_linear_roc, main = "LASSO linear regression")
-auc(lasso_linear_roc)
-
-## Bi-directional stepwise
-both_step_log_odds <- predict(both,
-                              newdata = test_without_site) # log odds scale
-both_step_probs <- predict(both,
-                           newdata = test_without_site,
-                           type = "response") # predicted probability scale
-hist(both_step_probs) # histogram of predicted probabilities (most are close to 0)
-summary(both_step_probs)
-
-# PPV for different thresholds
-get_ppv(pred_vals = both_step_probs > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = both_step_probs > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-both_step_roc <- roc(predictor = both_step_probs, response = test$glasgow_rankin_0_3_30)
-plot(both_step_roc)
-auc(both_step_roc)
-
-## Bi-directional stepwise linear regression
-both_step_probs_linear <- predict(both_linear,
-                           newdata = test_without_site,
-                           type = "response") # predicted probability scale
-hist(both_step_probs_linear) # histogram of predicted probabilities (most are close to 0)
-summary(both_step_probs_linear)
-
-# PPV for different thresholds
-get_ppv(pred_vals = both_step_probs_linear > 0.11, true_vals = test$glasgow_rankin_0_3_30)
-get_ppv(pred_vals = both_step_probs_linear > 0.5, true_vals = test$glasgow_rankin_0_3_30)
-
-# ROC curve
-both_step_linear_roc <- roc(predictor = both_step_probs_linear, response = test$glasgow_rankin_0_3_30)
-plot(both_step_linear_roc)
-auc(both_step_linear_roc)
-
-
-
-## TO DO: Write helper functions for all of the above
-
-## Scratchwork ----
-test_only_weighted_vars <- copy(test)
-test_only_weighted_vars[, `:=`(Intercept = 1,
-                               Day7NEWscore_BP1 = 1 * (Day7NEWscore_BP == "1"))]
-test_only_weighted_vars <- subset(test_only_weighted_vars, select = lasso_nonzero_coefs$Variable)
-preds <- as.matrix(test_only_weighted_vars) %*% lasso_nonzero_coefs$Coefficient
-head(preds)
-head(expit(preds))
+save_roc_on_test(logistic, "logistic-model", "Logistic Regression")
+save_roc_on_test_matrix(lasso_logistic, "lasso-logistic-model", "LASSO Logistic Regression")
+save_roc_on_test_matrix(lasso_linear, "lasso-linear-model", "LASSO Linear Regression")
+save_roc_on_test(step_logistic, "step-logistic-model", "Stepwise Selection Logistic Regression")
+save_roc_on_test(step_linear, "step-linear-model", "Stepwise Selection Linear Regression")
