@@ -166,22 +166,23 @@ save_roc <- function(probs, filepath, title){
   png(here::here(paste0("results/ROC-curves/", filepath, ".png")))
   plot(roc_on_test(probs), main = paste0(title, ", AUC =", auc_on_test(probs)))
   dev.off()
-  return(NULL) # to do: check if this is the best way to code returning nothing
+  return(TRUE) # indicates successful save
 }
 save_roc_on_test <- function(model, filepath, title){
   probs <- predicted_probs_on_test(model)
   save_roc(probs, filepath, title)
-  return(NULL)
+  return(TRUE) # indicates successful save
 }
 save_ppv_on_test <- function(model, filepath, cutoff = 0.119891){ # 0.119891 is the prevalence in the training data; like an empirical Bayes prior here
-  ppv <- get_ppv(predicted_probs_on_test(model),
+  ppv <- get_ppv(cutoff,
+                 predicted_probs_on_test(model),
                  test$glasgow_rankin_0_3_30) |>
     round(4)
   ppv_as_dt <- data.table(Model = filepath,
                           Cutoff = cutoff,
                           PPV = ppv)
   fwrite(ppv_as_dt, here::here(paste0("results/PPVs/", filepath)))
-  return(NULL)
+  return(TRUE) # indicates successful save
 }
 
 save_roc_on_test(logistic, "logistic-model", "Logistic Regression")
@@ -197,6 +198,7 @@ save_ppv_on_test(step_logistic, "step-logistic-model")
 save_ppv_on_test(step_linear, "step-linear-model")
 
 # combine PPV csvs into 1 csv
+file.remove(here::here("results/PPVs/all-model-PPVs.csv"))
 ppv_files <- paste0(here::here("results/PPVs/"),
                     list.files(here::here("results/PPVs/")))
 ppv_table <- lapply(ppv_files, fread) |>

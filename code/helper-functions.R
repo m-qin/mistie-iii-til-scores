@@ -107,10 +107,11 @@ rm_id_var <- function(data, vars_to_rm = "new_id"){
   return(data)
 }
 
-# Function to calculate PPV from predictions and true values
-get_ppv <- function(pred_vals, true_vals){
-  n_true_pos <- sum(pred_vals * true_vals)
-  n_false_pos <- sum(pred_vals * (1-true_vals))
+# Function to calculate PPV from predictions and true values, using cutoff to decide whether a predicted probability leads to a prediction of 1 or 0
+get_ppv <- function(cutoff, pred_probs, true_outcomes){
+  pred_outcomes <- 1 * (pred_probs > cutoff)
+  n_true_pos <- sum(pred_outcomes * true_outcomes)
+  n_false_pos <- sum(pred_outcomes * (1-true_outcomes))
   ppv <- n_true_pos / (n_true_pos + n_false_pos)
   return(ppv)
 }
