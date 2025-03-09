@@ -5,7 +5,8 @@ id_var <- "new_id"
 cluster_vars <- c("sitename",
                   "site_continent")
 
-outcome_var <- "glasgow_rankin_0_3_30" # 1 if "glasgow_rankin_30" is 0-3 (57 values), 0 if "glasgow_rankin_30" is 4-6 (436 values); 6 NAs
+outcome_vars <- c("glasgow_rankin_0_3_30", # binarized mRS at 30 days; 1 if mRS is 0-3 (57 values), 0 if mRS is 4-6 (436 values); 6 NAs
+                  "glasgow_rankin_0_3_365") # binarized mRS at 365 days
 
 stratifying_vars <- c("age_at_consent", # integers (but treat as continuous), ranging from 28 to 90 (median 62, mean 61), unimodal, very slightly skew left
                       "gcs_randomization", # integers (but treat as continuous), ranging from 3 to 15 (median 10, mean 10.6), bimodal (around 8 and 13); high score is good

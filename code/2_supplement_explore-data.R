@@ -13,7 +13,8 @@ data_analysis <- data.table::fread(here::here("data/private/data_for_analysis.cs
 ## Explore data ----
 
 # check outcome prevalence
-table(data_analysis$glasgow_rankin_0_3_30) # 436 are 0 (poor patient outcome), only 57 are 1 (good patient outcome); 6 NAs have been excluded already
+table(data_analysis$glasgow_rankin_0_3_30) # 433 are 0 (poor patient outcome), only 55 are 1 (good patient outcome); 6 NAs have been excluded already
+table(data_analysis$glasgow_rankin_0_3_365) # 279 are 0 (poor patient outcome), only 209 are 1 (good patient outcome); 10 NAs have been excluded already
 
 # check distribution of site ID and continent
 table(data_analysis$site_continent, useNA = "always") # 395 N America, 84 Europe, 14 Australia-Asia; 0 NAs
